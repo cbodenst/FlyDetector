@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>fly.ico</file>
+    </qresource>
+</RCC>
