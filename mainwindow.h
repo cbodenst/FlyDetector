@@ -86,9 +86,13 @@ private:
     /*Adjust Image size to Window size*/
     void resizeEvent(QResizeEvent* event);
 
+    static bool compVials(const cv::Vec3f& first, const cv::Vec3f& second);
+    void saveSettings(QString settings_path);
+    void loadSettings(QString settings_path);
 private slots:
     void onLoad();
-
+    void on_actionSave_triggered();
+    void on_actionLoad_triggered();
 };
 
 #endif // MAINWINDOW_H

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1006</width>
-    <height>687</height>
+    <height>698</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -78,6 +78,13 @@
       </property>
      </widget>
     </item>
+    <item row="19" column="3">
+     <widget class="QPushButton" name="findVials">
+      <property name="text">
+       <string>Find Vials</string>
+      </property>
+     </widget>
+    </item>
     <item row="3" column="18">
      <widget class="QSpinBox" name="ppf">
       <property name="maximum">
@@ -85,13 +92,6 @@
       </property>
       <property name="value">
        <number>300</number>
-      </property>
-     </widget>
-    </item>
-    <item row="19" column="3">
-     <widget class="QPushButton" name="findVials">
-      <property name="text">
-       <string>Find Vials</string>
       </property>
      </widget>
     </item>
@@ -119,24 +119,17 @@
       </property>
      </widget>
     </item>
-    <item row="11" column="17">
-     <widget class="QLabel" name="label_8">
-      <property name="text">
-       <string>Output file</string>
-      </property>
-     </widget>
-    </item>
-    <item row="9" column="18">
-     <widget class="QLabel" name="time">
-      <property name="text">
-       <string>0</string>
-      </property>
-     </widget>
-    </item>
     <item row="9" column="17">
      <widget class="QLabel" name="label_6">
       <property name="text">
        <string>Timer</string>
+      </property>
+     </widget>
+    </item>
+    <item row="11" column="17">
+     <widget class="QLabel" name="label_8">
+      <property name="text">
+       <string>Output file</string>
       </property>
      </widget>
     </item>
@@ -147,10 +140,10 @@
       </property>
      </widget>
     </item>
-    <item row="19" column="10">
-     <widget class="Line" name="line_2">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
+    <item row="9" column="18">
+     <widget class="QLabel" name="time">
+      <property name="text">
+       <string>0</string>
       </property>
      </widget>
     </item>
@@ -164,6 +157,13 @@
       </property>
       <property name="value">
        <number>60</number>
+      </property>
+     </widget>
+    </item>
+    <item row="19" column="10">
+     <widget class="Line" name="line_2">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
       </property>
      </widget>
     </item>
@@ -184,19 +184,6 @@
       </property>
      </widget>
     </item>
-    <item row="4" column="17">
-     <spacer name="verticalSpacer">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>40</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
     <item row="15" column="17" colspan="2">
      <widget class="QPushButton" name="startButton">
       <property name="text">
@@ -210,6 +197,19 @@
        <string>0</string>
       </property>
      </widget>
+    </item>
+    <item row="4" column="17">
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>40</height>
+       </size>
+      </property>
+     </spacer>
     </item>
     <item row="19" column="9">
      <widget class="QRadioButton" name="cluster">
@@ -255,19 +255,6 @@
       </property>
      </widget>
     </item>
-    <item row="13" column="17">
-     <spacer name="verticalSpacer_3">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>40</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
     <item row="19" column="7">
      <widget class="QRadioButton" name="rgb">
       <property name="text">
@@ -285,6 +272,33 @@
       </property>
       <property name="value">
        <number>110</number>
+      </property>
+     </widget>
+    </item>
+    <item row="13" column="17">
+     <spacer name="verticalSpacer_3">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>40</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="5" column="17">
+     <widget class="QLabel" name="label_10">
+      <property name="text">
+       <string>Camera Focus</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="17">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Threshold</string>
       </property>
      </widget>
     </item>
@@ -327,20 +341,6 @@
       </property>
      </spacer>
     </item>
-    <item row="5" column="17">
-     <widget class="QLabel" name="label_10">
-      <property name="text">
-       <string>Camera Focus</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="17">
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Threshold</string>
-      </property>
-     </widget>
-    </item>
     <item row="19" column="11">
      <widget class="QPushButton" name="preview">
       <property name="text">
@@ -361,9 +361,47 @@
       </property>
      </widget>
     </item>
+    <item row="19" column="4">
+     <widget class="QCheckBox" name="Calibration">
+      <property name="text">
+       <string>Calibration</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1006</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>Fi&amp;le</string>
+    </property>
+    <addaction name="actionSave"/>
+    <addaction name="actionLoad"/>
+   </widget>
+   <addaction name="menuFile"/>
+  </widget>
+  <action name="actionSave">
+   <property name="text">
+    <string>Save</string>
+   </property>
+  </action>
+  <action name="actionLoad">
+   <property name="text">
+    <string>Load</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources/>

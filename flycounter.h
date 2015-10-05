@@ -42,6 +42,7 @@ public:
      void setVials(Vials vials);
      void setOutput(std::string out);
      void saveImages(bool value);
+     void calibrate();
 
      /*Update functions*/
      void updateImage();
@@ -86,6 +87,7 @@ private:
     std::vector<int> flies;
     QReadWriteLock clusterLock;
     QTime timer;
+    cv::Mat calibration;
 
     /*Camera*/
     FlyCam* cam;
@@ -101,7 +103,6 @@ signals:
     void updateImg();
     void updateTime(QString time);
 
-public slots:
 };
 
 #endif // FLYCOUNTER_H

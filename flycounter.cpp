@@ -38,12 +38,13 @@ numLabels(0)
         if (!cam->accessable)
         {
             delete cam;
-            cam = new SampleCam("new",37);
+            cam = new SampleCam("new",1);
         }
     }
     this->updateImage();
     calcThresh();
     this->clusters = image.clone();
+    this->calibration = cv::Mat(2,image.size,CV_8U,cv::Scalar(255));
 
     /*Create ouput directory*/
     QDir().mkdir("results");
@@ -164,6 +165,7 @@ void FlyCounter::calcClusters()
         cv::circle(mask,cv::Point(vial[0],vial[1]),vial[2],cv::Scalar(255,255,255),-1);
         cv::Mat flies;
         cv::bitwise_and(mask,this->thresh,flies);
+        cv::bitwise_and(flies, calibration ,flies);
 
         /*Extract white pixels*/
         cv::findNonZero(flies, coords[counter]);
@@ -289,6 +291,18 @@ void FlyCounter::setOutput(std::string out)
 void FlyCounter::saveImages(bool value)
 {
     this->save_imgs = value;
+}
+
+void FlyCounter::calibrate()
+{
+    calcThresh();
+    cv::Mat mask = cv::Mat(image.size(),thresh.type(),cv::Scalar(0));
+    for (auto vial : this->vials)
+    {
+        cv::circle(mask,cv::Point(vial[0],vial[1]),vial[2],cv::Scalar(255,255,255),-1);
+    }
+    cv::bitwise_and(mask,this->thresh,this->calibration);
+    cv::bitwise_not(calibration,calibration);
 }
 
 void FlyCounter::writeResults(int time)
