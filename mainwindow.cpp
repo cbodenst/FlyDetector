@@ -241,8 +241,6 @@ void MainWindow::on_findVials_clicked()
         this->vials.push_back(cv::Vec3f(550,360,340));
     std::sort(this->vials.begin(), this->vials.end(), compVials);
     counter.setVials(this->vials);
-    if(ui->Calibration->isChecked())
-        this->counter.calibrate();
     this->updateImage();
 
 }
@@ -264,7 +262,6 @@ void MainWindow::saveSettings(QString settings_path)
 {
     QSettings settings(settings_path,QSettings::NativeFormat);
     settings.setValue("minPts", ui->minPts->value());
-    settings.setValue("calibration", ui->Calibration->isChecked());
     settings.setValue("epsilon", ui->eps->value());
     settings.setValue("focus", ui->focus->value());
     settings.setValue("interval", ui->inteval->value());
@@ -280,7 +277,6 @@ void MainWindow::loadSettings(QString settings_path)
         return;
     QSettings settings(settings_path,QSettings::NativeFormat);
     ui->minPts->setValue(settings.value("minPts").toInt());
-    ui->Calibration->setChecked(settings.value("calibration").toBool());
     ui->eps->setValue(settings.value("epsilon").toInt());
     ui->focus->setValue(settings.value("focus").toInt());
     ui->inteval->setValue(settings.value("interval").toInt());
