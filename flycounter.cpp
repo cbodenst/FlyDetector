@@ -61,7 +61,7 @@ void FlyCounter::run()
     if(!this->running)
     {
         emit flieCount(QString("--"));
-        thread = new std::thread(&FlyCounter::start,this);
+        thread = new std::thread(&FlyCounter::start, this);
     }
 }
 void FlyCounter::stop()
@@ -238,12 +238,17 @@ void FlyCounter::start()
         this->timer.start();
         QTime round;
         round.start();
-
+        bool shaked = false;
         /*Loop*/
         while(this->running)
         {
             int roundTime = round.elapsed();
             int elapsed = this->timer.elapsed()/1000;
+            if(!shaked && roundTime > this->measureTime*1000 - 10000)
+            {
+                this->shaker.shakeFor(5000);
+                shaked = true;
+            }
             if(roundTime > this->measureTime*1000)
             {
                 round.start();
@@ -255,6 +260,7 @@ void FlyCounter::start()
                     filename << "results/" << elapsed << ".jpg";
                     cv::imwrite(filename.str(),image);
                 }
+                shaked=false;
             }
             emit updateTime(QString::number(elapsed));
         }

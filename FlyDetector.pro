@@ -26,7 +26,8 @@ SOURCES += main.cpp\
     dbscan/hpdbscan.cpp \
     dbscan/points.cpp \
     dbscan/rules.cpp \
-    dbscan/space.cpp
+    dbscan/space.cpp \
+    shaker.cpp
 
 HEADERS  += mainwindow.h \
     flycounter.h \
@@ -39,7 +40,8 @@ HEADERS  += mainwindow.h \
     dbscan/points.h \
     dbscan/rules.h \
     dbscan/space.h \
-    dbscan/util.h
+    dbscan/util.h \
+    shaker.h
 
 FORMS    += mainwindow.ui
 
@@ -48,4 +50,5 @@ LIBS += -lopencv_imgproc
 LIBS += -lopencv_highgui
 LIBS += -lopencv_video
 LIBS += -lgphoto2
+LIBS += -lusb-1.0
 

@@ -10,6 +10,7 @@
 #include "opencv2/opencv.hpp"
 
 #include "flycam.h"
+#include "shaker.h"
 
 #define SAMPLE_FILE "D:/FlyDetector/Detector/FlyDetector/flies.jpg"
 
@@ -91,6 +92,9 @@ private:
 
     /*Camera*/
     FlyCam* cam;
+
+    /*Shaker*/
+    Shaker shaker;
 
     /*Helper functions*/
     int countFlies();
