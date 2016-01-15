@@ -1,25 +1,30 @@
 #include "webcamera.h"
 
 WebCamera::WebCamera()
+    : cam(cv::VideoCapture(0))
 {
     try
     {
-        cam = cv::VideoCapture(0);
-        if(cam.isOpened())
+        if (cam.isOpened())
         {
             //Check if this is really working
             cv::Mat test;
             cam >> test;
-            this->accessable=true;
-            cam.set(3,1080);
-            cam.set(4,720);
-            cam.set(28,110); //FOCUS
+            this->accessable = true;
+
+            cam.set(CAP_PROP_FRAME_WIDTH,  WebCamera::IMAGE_WIDTH);
+            cam.set(CAP_PROP_FRAME_HEIGHT, WebCamera::IMAGE_HEIGHT);
+            cam.set(CAP_PROP_FOCUS,        WebCamera::DEFAULT_FOCUS);
+        }
+        else
+        {
+            this->accessable = false;
         }
 
     }
-    catch(cv::Exception)
+    catch (const cv::Exception& e)
     {
-        this->accessable=false;
+        this->accessable = false;
     }
 }
 
@@ -30,7 +35,5 @@ bool WebCamera::getImage(cv::Mat& mat)
 
 bool WebCamera::setFocus(int value)
 {
-    cam.set(28,value);
-    return true;
+    return cam.set(CAP_PROP_FOCUS, value);
 }
-
