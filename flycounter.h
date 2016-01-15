@@ -9,7 +9,7 @@
 
 #include "opencv2/opencv.hpp"
 
-#include "flycam.h"
+#include "cam.h"
 #include "shaker.h"
 
 #define SAMPLE_FILE "D:/FlyDetector/Detector/FlyDetector/flies.jpg"
@@ -91,7 +91,7 @@ private:
     cv::Mat calibration;
 
     /*Camera*/
-    FlyCam* cam;
+    Cam* cam;
 
     /*Shaker*/
     Shaker shaker;

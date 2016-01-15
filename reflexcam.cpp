@@ -34,7 +34,7 @@ bool ReflexCam::getImage(cv::Mat &mat)
     gp_camera_file_delete(cam, camera_file_path.folder, camera_file_path.name, context);
     
     mat = cv::imread(filename);
-    if (mat.data() == nullptr)
+    if (mat.empty())
     {
         return false;
     }

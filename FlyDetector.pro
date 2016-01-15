@@ -19,10 +19,9 @@ QMAKE_LFLAGS +=  -fopenmp
 SOURCES += main.cpp\
         mainwindow.cpp \
     flycounter.cpp \
-    samplecam.cpp \
+    filecam.cpp \
     webcamera.cpp \
     reflexcam.cpp \
-    flycam.cpp \
     dbscan/hpdbscan.cpp \
     dbscan/points.cpp \
     dbscan/rules.cpp \
@@ -30,11 +29,11 @@ SOURCES += main.cpp\
     shaker.cpp
 
 HEADERS  += mainwindow.h \
+    cam.h \
     flycounter.h \
-    samplecam.h \
+    filecam.h \
     webcamera.h \
     reflexcam.h \
-    flycam.h \
     dbscan/constants.h \
     dbscan/hpdbscan.h \
     dbscan/points.h \

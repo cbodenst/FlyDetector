@@ -235,7 +235,6 @@ void MainWindow::on_findVials_clicked()
     this->vials.clear();
     cv::Mat grey;
     cv::cvtColor( counter.getImage(), grey, 7);
-    int vial_size =ui->vialsize->value();
     cv::HoughCircles(grey,this->vials, CV_HOUGH_GRADIENT,2,ui->vialsize->value()*2 ,100,100,ui->vialsize->value() - 20,ui->vialsize->value() + 20);
     if (this->vials.size() == 0)
         this->vials.push_back(cv::Vec3f(550,360,340));

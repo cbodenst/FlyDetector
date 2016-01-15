@@ -12,7 +12,7 @@
 #include <fstream>
 
 #include "webcamera.h"
-#include "samplecam.h"
+#include "filecam.h"
 #include "reflexcam.h"
 
 FlyCounter::FlyCounter(QObject *parent)
@@ -31,14 +31,14 @@ numLabels(0)
 {
     /*Try out different cams*/
     cam = new ReflexCam();
-    if (!cam->accessable)
+    if (!cam->isAccessable())
     {
         delete cam;
         cam = new WebCamera();
-        if (!cam->accessable)
+        if (!cam->isAccessable())
         {
             delete cam;
-            cam = new SampleCam("new",1);
+            cam = new FileCam("new",1);
         }
     }
     this->updateImage();

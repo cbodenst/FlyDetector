@@ -4,7 +4,7 @@
 #include <opencv2/opencv.hpp>
 #include <string>
 
-#include "flycam.h"
+#include "cam.h"
 
 /* "Special camera" that reads images from disk */
 class FileCam : public Cam

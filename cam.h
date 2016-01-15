@@ -7,9 +7,11 @@
 class Cam
 {
 protected:
-    bool accessable = false;
+    bool accessable;
+    Cam(bool acc = false) : accessable(acc) {}
 
 public:
+
     /* Accessort for camera accesability */
     virtual inline bool isAccessable() { return this->accessable; }
 
@@ -18,6 +20,8 @@ public:
 
     /* Focuses the camera to the passed focus length */
     virtual bool setFocus(int value) = 0;
+
+    virtual ~Cam() {}
 };
 
 #endif // CAM_H
