@@ -1,58 +1,55 @@
-#include "reflexcam.h"
 #include <fcntl.h>
+#include <iostream>
 
-ReflexCam::ReflexCam()
+#include "reflexcam.h"
+
+ReflexCam::ReflexCam() : cam(nullptr), context(nullptr)
 {
-    gp_camera_new (&cam);
-    context = gp_context_new();
-    //gp_context_set_error_func(context, error_func, NULL);
-    //gp_context_set_message_func(context, message_func, NULL);
-    int ret = gp_camera_init(cam, context);
-    if (ret < GP_OK) {
-        printf("No camera auto detected.\n");
+    gp_camera_new(&cam);
+    context   = gp_context_new();
+    int error = gp_camera_init(cam, context);
+
+    if (error < GP_OK) {
+        std::cerr << "Could not auto-detect camera" << std::endl;
         gp_camera_free(cam);
-        cam = NULL;
+        cam = nullptr;
+        this->accessable = false;
     }
     else
     {
-        accessable=true;
+        this->accessable = true;
     }
-}
-
-ReflexCam::~ReflexCam()
-{
-    if (cam) gp_camera_unref(cam);
-    gp_context_unref(context);
 }
 
 bool ReflexCam::getImage(cv::Mat &mat)
 {
     const char* filename = "temp";
-    CameraFile *file;
+    CameraFile*file;
     CameraFilePath camera_file_path;
+    
     gp_camera_capture(cam, GP_CAPTURE_IMAGE, &camera_file_path, context);
     int fd = open(filename, O_CREAT | O_WRONLY, 0644);
     gp_file_new_from_fd(&file, fd);
     gp_camera_file_get(cam, camera_file_path.folder, camera_file_path.name, GP_FILE_TYPE_NORMAL, file, context);
     gp_camera_file_delete(cam, camera_file_path.folder, camera_file_path.name, context);
+    
     mat = cv::imread(filename);
+    if (mat.data() == nullptr)
+    {
+        return false;
+    }
 
     return true;
 }
 
-bool ReflexCam::setFocus(int)
+ReflexCam::~ReflexCam()
 {
-   return false;
+    if (context)
+    {
+        gp_context_unref(context);
+    }
+    if (cam)
+    {
+        gp_camera_unref(cam);
+    }
 }
-
-void ReflexCam::error_func (GPContext* , const char *format, va_list args, void*) {
- fprintf  (stderr, "*** Contexterror ***\n");
- vfprintf (stderr, format, args);
- fprintf  (stderr, "\n");
-}
-
-void ReflexCam::message_func (GPContext *, const char *format, va_list args, void *) {
- vprintf (format, args);
- printf ("\n");
-}
-
