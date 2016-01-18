@@ -8,24 +8,26 @@ unsigned char Shaker::OFF[] = {0xFD, 0x01};
 
 Shaker::Shaker()
 {
+    // initialize libusb
     int error = libusb_init(nullptr);
     if (error != 0)
     {
         std::cerr  << "Could not initialize lib" << std::endl;
         return;
     }
-    this->device = libusb_open_device_with_vid_pid(nullptr, VID, PID);
 
+    // retrieve the device by vendor and product ID (fixed for USB relays)
+    this->device = libusb_open_device_with_vid_pid(nullptr, VID, PID);
     if (this->device == nullptr)
     {
         std::cerr  << "Could not find device" << std::endl;
         return;
     }
 
+    // detach the kernel USB driver/mount if needed
     if (libusb_kernel_driver_active(this->device, 0))
     {
         error = libusb_detach_kernel_driver(this->device, 0);
-
         if (error != 0)
         {
             std::cerr  << "Could not detach kernal driver" << std::endl;
@@ -33,6 +35,7 @@ Shaker::Shaker()
         }
     }
 
+    // claim the USB relay for us
     error = libusb_claim_interface(this->device, 0);
     if (error != 0)
     {
@@ -43,9 +46,11 @@ Shaker::Shaker()
 
 void Shaker::shake()
 {
+    // start shaking, wait till end is reached, stop shaking
     this->start();
     while (true) {
         this->mutex.lock();
+        // check whether the shaking deadline has been extended
         bool need_to_shake = this->end > clock_t::now();
         this->mutex.unlock();
 
@@ -66,7 +71,7 @@ void Shaker::shakeFor(int millisecs)
     {
         this->mutex.lock()
         // end of shaking is in future - still running, increase end
-        if (this->end >= clock_t::now())
+        if (this->end >= Clock::now())
         {
             this->end += std::chrono::milliseconds(millisecs);
             this->mutex.unlock();
@@ -79,7 +84,7 @@ void Shaker::shakeFor(int millisecs)
         }
     }
     // SHAKE IT BABY!
-    this->end = clock_t now + std::chrono::milliseconds(millisecs);
+    this->end = Clock::now() + std::chrono::milliseconds(millisecs);
     this->thread = std::thread(&Shaker::_shakeFor, this);
     this->mutex.unlock();
 }

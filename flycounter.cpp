@@ -1,86 +1,155 @@
 #include "flycounter.h"
-#include <iostream>
-#include <unistd.h>
-#include <chrono>
-#include <map>
-#include <omp.h>
 
 #include <QDir>
 
-#include "opencv2/opencv.hpp"
-#include "dbscan/hpdbscan.h"
+#include <chrono>
 #include <fstream>
+#include <iostream>
+#include <map>
 
-#include "webcamera.h"
+#include "settings.h"
+#include "dbscan/hpdbscan.h"
 #include "filecam.h"
 #include "reflexcam.h"
+#include "timer.h"
+#include "webcamera.h"
 
 FlyCounter::FlyCounter(QObject *parent)
-:
-QObject(parent),
-running(false),
-threshhold(100),
-numFlies(0),
-minPts(50),
-eps(5),
-ppf(300),
-measureTime(60),
-output("result.csv"),
-save_imgs(true),
-numLabels(0)
+  : QObject(parent),
+    // experiment data
+    output(Settings::OUTPUT_FILE),
+    saveImages(Settings::SAVE_IMAGES),
+    // analysis parameters
+    measurementTime(Settings::MEASUREMENT_TIME),
+    epsilon(Settings::EPSILON),
+    minPoints(Settings::MIN_POINTS),
+    pixelsPerFly(Settings::PIXELS_PER_FLY),
+    threshhold(Settings::THRESHOLD),
+    // threaded execution
+    running(false)
+    // clustering
+    numLabels(0),
+    numberOfFlies(0),
 {
-    /*Try out different cams*/
-    cam = new ReflexCam();
-    if (!cam->isAccessable())
+    /* setup initial images */
+    this->detectCamera();
+    this->updateCameraImage();
+    this->calculateThresholdImage();
+    this->clusters    = this->cameraImage.clone();
+    this->calibration = cv::Mat(2, this->cameraImage.size, CV_8U, cv::Scalar(255));
+
+    /* create ouput directory */
+    QDir().mkdir(Constants::OUTPUT_PATH);
+}
+
+/* image analysis mainloop */
+void FlyCounter::analyze()
+{
+    Timepoint start = Clock::now();
+    Timepoint shake = start + Settings::ROUND_TIME - Settings::SHAKE_LEAD;
+
+    while (this->running)
     {
-        delete cam;
-        cam = new WebCamera();
-        if (!cam->isAccessable())
+        Timepoint current = Clock::now();
+
+        if (current > shake)
         {
-            delete cam;
-            cam = new FileCam("new",1);
+            this->shaker.shakeFor(Settings::SHAKE_TIME);
+            shake += Settings::ROUND_TIME
         }
+
+        if (roundTime > this->measureTime*1000)
+        {
+            round.start();
+            countFlies();
+            writeResults(elapsed);
+            if(save_imgs)
+            {
+                std::stringstream filename;
+                filename << "results/" << elapsed << ".jpg";
+                cv::imwrite(filename.str(),image);
+            }
+            shaked=false;
+        }
+        emit updateTime(QString::number(elapsed));
     }
-    this->updateImage();
-    calcThresh();
-    this->clusters = image.clone();
-    this->calibration = cv::Mat(2,image.size,CV_8U,cv::Scalar(255));
-
-    /*Create ouput directory*/
-    QDir().mkdir("results");
 }
 
-FlyCounter::~FlyCounter()
+/* detect the built-in cameras; priorities: reflex, webcam, file */
+void FlyCounter::detectCamera()
 {
-    for(auto l : labels)
-        delete[] l;
-}
-
-void FlyCounter::run()
-{
-    if(!this->running)
+    // prefer reflex camera
+    this->camera = new ReflexCam();
+    if (this->camera->isAccessable())
     {
-        emit flieCount(QString("--"));
-        thread = new std::thread(&FlyCounter::start, this);
+        return;
+    }
+
+    // reflex camera not available, try built-in webcam
+    delete this->camera;
+    this->camera = new WebCamera();
+    if (this->camera->isAccessable())
+    {
+        return;
+    }
+
+    // webcam is not available, fallback to "camera" reading from disk
+    delete this->camera;
+    this->camera = new FileCam("new", 1);
+}
+
+/* output the fly counts in a tab-separated list into a file, leading value is the collection timestamp */
+void FlyCounter::writeResults(int time)
+{
+    std::ofstream file(Settings::OUTPUT_PATH + "/" + this->output, std::ios::app);
+    file << time ;
+    for (int count : this->flies)
+    {
+        file << "\t" << count;
+    }
+    file << std::endl;
+    file.close();
+}
+
+/** public **/
+
+/* start the fly counter */
+void FlyCounter::start()
+{
+    if (!this->running)
+    {
+        emit flyCount(QString("--"));
+        this->running = true;
+        this->thread  = std::thread(&FlyCounter::analyze, this);
     }
 }
+
+/* stop the fly counter */
 void FlyCounter::stop()
 {
-    this->running = false;;
-    thread->join();
+    this->running = false;
+    this->thread.join();
 }
 
-const cv::Mat &FlyCounter::getImage()
+/* fetch current image from the camera */
+void FlyCounter::updateCameraImage()
 {
-    return this->image;
+    if (this->camera->getImage(image))
+    {
+        std::cerr << "Could not obtain image from the camera" << std::endl;
+    }
+    cv::cvtColor(image, image, CV_BGR2RGB);
 }
 
-const cv::Mat &FlyCounter::getThresh()
+/* calculate the threshold image from the currently set camera image */
+void FlyCounter::calculateThresholdImage()
 {
-    return this->thresh;
+    cv::Mat greyscaleImage;
+    cv::cvtColor(this->cameraImage, greyscaleImage, CV_RGB2GRAY);
+    cv::threshold(greyscaleImage, this->threshold, this->getThresholdImage, 255, CV_THRESH_BINARY_INV);
 }
 
-const cv::Mat &FlyCounter::getClusters()
+const cv::Mat& FlyCounter::getClusters()
 {
     /*Lock while calculating*/
     this->clusterLock.lockForWrite();
@@ -128,29 +197,6 @@ const cv::Mat &FlyCounter::getClusters()
 
     this->clusterLock.unlock();
     return this->clusters;
-}
-
-
-int FlyCounter::getMinPts()
-{
-    return this->minPts;
-}
-
-int FlyCounter::getEps()
-{
-    return this->eps;
-}
-
-int FlyCounter::getPPF()
-{
-    return this->ppf;
-}
-
-void FlyCounter::calcThresh()
-{
-    cv::Mat grey;
-    cv::cvtColor( image, grey, 7);
-    cv::threshold(grey,thresh,this->threshhold,255,1);
 }
 
 void FlyCounter::calcClusters()
@@ -202,82 +248,12 @@ void FlyCounter::calcClusters()
     emit updateImg();
 }
 
-void FlyCounter::setThresh(int value)
-{
-    this->threshhold = value;
-}
-
-void FlyCounter::setMinPts(int value)
-{
-    this->minPts = value;
-}
-
-void FlyCounter::setEps(int value)
-{
-    this->eps = value;
-}
-
-void FlyCounter::setPPF(int value)
-{
-    this->ppf = value;
-}
-
-void FlyCounter::setMeasureTime(int value)
-{
-    this->measureTime = value;
-}
-
-void FlyCounter::setFocus(int value)
-{
-    cam->setFocus(value);
-}
-
-void FlyCounter::start()
-{
-        this->running = true;
-        this->timer.start();
-        QTime round;
-        round.start();
-        bool shaked = false;
-        /*Loop*/
-        while(this->running)
-        {
-            int roundTime = round.elapsed();
-            int elapsed = this->timer.elapsed()/1000;
-            if(!shaked && roundTime > this->measureTime*1000 - 10000)
-            {
-                this->shaker.shakeFor(5000);
-                shaked = true;
-            }
-            if(roundTime > this->measureTime*1000)
-            {
-                round.start();
-                countFlies();
-                writeResults(elapsed);
-                if(save_imgs)
-                {
-                    std::stringstream filename;
-                    filename << "results/" << elapsed << ".jpg";
-                    cv::imwrite(filename.str(),image);
-                }
-                shaked=false;
-            }
-            emit updateTime(QString::number(elapsed));
-        }
-}
-
 int FlyCounter::countFlies()
 {
     updateImage();
     this->calcThresh();
     this->calcClusters();
     return this->numFlies;
-}
-
-void FlyCounter::updateImage()
-{
-    cam->getImage(image);
-    cv::cvtColor(image,image,4);
 }
 
 void FlyCounter::setVials(Vials vials)
@@ -287,16 +263,6 @@ void FlyCounter::setVials(Vials vials)
     this->labels = std::vector<ssize_t*>(vials.size());
     this->numLabels = std::vector<int>(vials.size());
     this->coords = std::vector<cv::Mat>(vials.size());
-}
-
-void FlyCounter::setOutput(std::string out)
-{
-    this->output = out;
-}
-
-void FlyCounter::saveImages(bool value)
-{
-    this->save_imgs = value;
 }
 
 void FlyCounter::calibrate()
@@ -311,14 +277,13 @@ void FlyCounter::calibrate()
     cv::bitwise_not(calibration,calibration);
 }
 
-void FlyCounter::writeResults(int time)
+/* destructor */
+FlyCounter::~FlyCounter()
 {
-    std::ofstream file;
-    file.open("results/" + this->output, std::ios::app);
-    file << time ;
-    for(int count :this->flies)
-        file << "\t" << count;
-    file  << std::endl;
-    file.close();
+    delete this->cam;
+    for (auto label : labels)
+    {
+        delete[] label;
+    }
 }
 

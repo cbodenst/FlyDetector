@@ -1,13 +1,11 @@
 #ifndef SHAKER_H
 #define SHAKER_H
 
-#include <chrono>
 #include <libusb-1.0/libusb.h>
 #include <mutex>
 #include <thread>
 
-typedef std::chrono::high_resolution_clock clock_t;
-typedef std::chrono::time_point<clock_t> timepoint_t;
+#include "timer.h"
 
 class Shaker
 {
@@ -25,7 +23,7 @@ protected:
     /* synchronization and threading for shaker thread */
     std::mutex  mutex;
     std::thread thread;
-    timepoint_t end;
+    Timepoint   end;
 
     /* USB device */
     libusb_device_handle* device;
