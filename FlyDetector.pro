@@ -40,7 +40,9 @@ HEADERS  += mainwindow.h \
     dbscan/rules.h \
     dbscan/space.h \
     dbscan/util.h \
-    shaker.h
+    shaker.h \
+    settings.h \
+    timer.h
 
 FORMS    += mainwindow.ui
 
