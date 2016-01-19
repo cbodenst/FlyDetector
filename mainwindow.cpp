@@ -10,34 +10,29 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow),
-    view_mode(VIEW_RGB)
+    ui(new UI::MainWindow),
+    view_mode(View::RGB)
 {
-    ui->setupUi(this);
-    /*Load and setup image*/
-    scn = new QGraphicsScene(ui->graphicsView);
-    ui->graphicsView->setScene(scn);
-    this->image = convertMat(counter.getImage());
-    showImage();
-    ui->graphicsView->fitInView(scn->itemsBoundingRect(),Qt::KeepAspectRatio);
+    /* set up UI */
+    this->ui->setupUi(this);
+    this->scene = new QGraphicsScene(this->ui->graphicsView);
+    this->ui->graphicsView->setScene(this->scene);
+    this->image = this->toPixmap(this->counter.getImage());
+    this->showImage(this->image);
+    this->ui->graphicsView->fitInView(this->scene->itemsBoundingRect(), Qt::KeepAspectRatio);
 
     /*Connect experiment parameters elements to the detector class */
-    connect(ui->threshhold,SIGNAL(valueChanged(int)),&counter,SLOT(setThresh(int)));
-    connect(ui->eps,SIGNAL(valueChanged(int)),&counter,SLOT(setEps(int)));
-    connect(ui->minPts,SIGNAL(valueChanged(int)),&counter,SLOT(setMinPts(int)));
-    connect(ui->ppf,SIGNAL(valueChanged(int)),&counter,SLOT(setPPF(int)));
+    connect(this->ui->threshhold,SIGNAL(valueChanged(int)),&counter,SLOT(setThresh(int)));
+    connect(this->ui->eps,SIGNAL(valueChanged(int)),&counter,SLOT(setEps(int)));
+    connect(this->ui->minPts,SIGNAL(valueChanged(int)),&counter,SLOT(setMinPts(int)));
+    connect(this->ui->ppf,SIGNAL(valueChanged(int)),&counter,SLOT(setPPF(int)));
+    connect(this->ui->inteval,SIGNAL(valueChanged(int)),&counter,SLOT(setMeasureTime(int)));
     connect(&counter,SIGNAL(flieCount(QString)),ui->flyCount,SLOT(setText(QString)));
     connect(&counter,SIGNAL(updateImg()),this,SLOT(updateImage()));
     connect(&counter,SIGNAL(updateTime(QString)),ui->time,SLOT(setText(QString)));
-    connect(ui->inteval,SIGNAL(valueChanged(int)),&counter,SLOT(setMeasureTime(int)));
 
     /*Workaround for image resize bug*/
     QTimer::singleShot( 0, this, SLOT( onLoad() ));
-}
-
-MainWindow::~MainWindow()
-{
-    delete ui;
 }
 
 void MainWindow::isRunning(bool running)
@@ -82,7 +77,7 @@ void MainWindow::isRunning(bool running)
 void MainWindow::showImage()
 {
     scn->clear();
-    QGraphicsPixmapItem* pixItem = new  QGraphicsPixmapItem(this->image);
+    QGraphicsPixmapItem* pixItem = new QGraphicsPixmapItem(this->image);
     scn->addItem(pixItem);
 }
 
@@ -113,7 +108,7 @@ void MainWindow::resizeEvent(QResizeEvent */*event*/)
 
 void MainWindow::onLoad()
 {
-    ui->graphicsView->fitInView(scn->itemsBoundingRect(),Qt::KeepAspectRatio);
+    ui->graphicsView->fitInView(scn->itemsBoundingRect(), Qt::KeepAspectRatio);
 }
 
 void MainWindow::on_thresh_toggled(bool checked)
@@ -296,14 +291,19 @@ void MainWindow::loadSettings(QString settings_path)
     ui->threshhold->valueChanged(settings.value("threshhold").toInt());
 }
 
+void MainWindow::on_actionLoad_triggered()
+{
+    QString filename = QFileDialog::getOpenFileName(this, "Open file");
+    this->loadSettings(filename);
+}
+
 void MainWindow::on_actionSave_triggered()
 {
     QString filename = QFileDialog::getSaveFileName(this, "Save file");
     this->saveSettings(filename);
 }
 
-void MainWindow::on_actionLoad_triggered()
+MainWindow::~MainWindow()
 {
-    QString filename = QFileDialog::getOpenFileName(this, "Open file");
-    this->loadSettings(filename);
+    delete this->ui;
 }
