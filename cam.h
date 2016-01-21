@@ -11,9 +11,8 @@ protected:
     Cam(bool acc = false) : accessable(acc) {}
 
 public:
-
     /* Accessort for camera accesability */
-    virtual inline bool isAccessable() { return this->accessable; }
+    virtual bool isAccessable() { return this->accessable; }
 
     /* Reads an image from the camera into the mat parameter and returns true if successful, false otherwise */
     virtual bool getImage(cv::Mat& mat) = 0;

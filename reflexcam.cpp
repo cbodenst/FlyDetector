@@ -42,6 +42,11 @@ bool ReflexCam::getImage(cv::Mat &mat)
     return true;
 }
 
+bool ReflexCam::setFocus(int focus)
+{
+    return false;
+}
+
 ReflexCam::~ReflexCam()
 {
     if (context)

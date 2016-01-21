@@ -1,309 +1,337 @@
+#include <QFileDialog>
+#include <QGraphicsPixmapItem>
+#include <QSettings>
+#include <QTimer>
+
+#include <opencv2/opencv.hpp>
+
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "vials.h"
 
-#include <QGraphicsPixmapItem>
-
-#include "opencv2/opencv.hpp"
-#include <QTimer>
-#include <QSettings>
-#include <QFileDialog>
+/* settings file keys */
+const QString MainWindow::MODE           = "mode";
+const QString MainWindow::DISPLAY_VIALS  = "displayVials";
+const QString MainWindow::LEAD_TIME      = "leadTime";
+const QString MainWindow::ROUND_TIME     = "roundTime";
+const QString MainWindow::SHAKE_TIME     = "shakeTime";
+const QString MainWindow::EPSILON        = "epsilon";
+const QString MainWindow::MIN_POINTS     =  "minPoints";
+const QString MainWindow::PIXELS_PER_FLY = "pixelsPerFly";
+const QString MainWindow::THRESHOLD      = "threshold";
+const QString MainWindow::VIAL_SIZE      = "vialSize";
+const QString MainWindow::OUTPUT_PATH    = "outputPath";
+const QString MainWindow::SAVE_IMAGES    = "saveImages";
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new UI::MainWindow),
-    view_mode(View::RGB)
+    ui(new Ui::MainWindow),
+    flyCounter(this,
+               Seconds(this->ui->leadTime->value()),
+               Seconds(this->ui->roundTime->value()),
+               Seconds(this->ui->shakeTime->value()),
+               this->ui->epsilon->value(),
+               this->ui->minPoints->value(),
+               this->ui->pixelsPerFly->value(),
+               this->ui->threshold->value(),
+               this->ui->vialSize->value(),
+               this->ui->outputPath->text().toStdString(),
+               this->ui->saveImages->isChecked())
 {
-    /* set up UI */
-    this->ui->setupUi(this);
-    this->scene = new QGraphicsScene(this->ui->graphicsView);
-    this->ui->graphicsView->setScene(this->scene);
-    this->image = this->toPixmap(this->counter.getImage());
-    this->showImage(this->image);
-    this->ui->graphicsView->fitInView(this->scene->itemsBoundingRect(), Qt::KeepAspectRatio);
+    this->setupUI();
+    this->setupSignals();
 
-    /*Connect experiment parameters elements to the detector class */
-    connect(this->ui->threshhold,SIGNAL(valueChanged(int)),&counter,SLOT(setThresh(int)));
-    connect(this->ui->eps,SIGNAL(valueChanged(int)),&counter,SLOT(setEps(int)));
-    connect(this->ui->minPts,SIGNAL(valueChanged(int)),&counter,SLOT(setMinPts(int)));
-    connect(this->ui->ppf,SIGNAL(valueChanged(int)),&counter,SLOT(setPPF(int)));
-    connect(this->ui->inteval,SIGNAL(valueChanged(int)),&counter,SLOT(setMeasureTime(int)));
-    connect(&counter,SIGNAL(flieCount(QString)),ui->flyCount,SLOT(setText(QString)));
-    connect(&counter,SIGNAL(updateImg()),this,SLOT(updateImage()));
-    connect(&counter,SIGNAL(updateTime(QString)),ui->time,SLOT(setText(QString)));
-
-    /*Workaround for image resize bug*/
-    QTimer::singleShot( 0, this, SLOT( onLoad() ));
+    /* XXX: workaround for image resize bug */
+    QTimer::singleShot(0, this, SLOT(resizeEvent()));
 }
 
-void MainWindow::isRunning(bool running)
+/** private **/
+
+/* window resize handler */
+void MainWindow::resizeEvent(QResizeEvent* /*event*/)
 {
-    /*While experiment is running, disable all Gui parameter elements*/
-    if(running)
+    this->ui->image->fitInView(this->scene->itemsBoundingRect(), Qt::KeepAspectRatio);
+}
+
+/* initializes the GUI elements; specifically: constructs a scene in the graphics view and get an initial camera shot */
+void MainWindow::setupUI()
+{
+    this->ui->setupUi(this);
+    this->scene = new QGraphicsScene(this->ui->image);
+    this->ui->image->setScene(this->scene);
+    this->showCameraImage();
+    this->resizeEvent(nullptr);
+}
+
+/* registers the QT interface signals */
+void MainWindow::setupSignals()
+{
+    connect(&this->flyCounter, SIGNAL(countUpdate(QString)),        this->ui->flies, SLOT(setText(QString)));
+    connect(&this->flyCounter, SIGNAL(imageUpdate(const cv::Mat&)), this,            SLOT(updateImage()));
+    connect(&this->flyCounter, SIGNAL(timeUpdate(QString)),         this->ui->timer, SLOT(setText(QString)));
+}
+
+/* set the passed OpenCV image in the graphics view */
+void MainWindow::setImage(const cv::Mat& image)
+{
+    this->image = this->toPixmap(image);
+    this->setPixmap();
+}
+
+/* set the passed QT pixmap image in the graphics view */
+void MainWindow::setImage(const QPixmap& image)
+{
+    this->image = image;
+    this->setPixmap();
+}
+
+/* creates an actual pixmap item in the scene after setting a new image in the setter */
+void MainWindow::setPixmap()
+{
+    QGraphicsPixmapItem* pixmapItem = new QGraphicsPixmapItem(this->image);
+    this->scene->clear();
+    this->scene->addItem(pixmapItem);
+}
+
+void MainWindow::showCameraImage()
+{
+    this->flyCounter.lock();
+    const cv::Mat& cameraImage = this->flyCounter.getCameraImage();
+    if (this->ui->displayVials->isChecked())
     {
-        ui->startButton->setEnabled(false);
-        ui->stopButton->setEnabled(true);
-        ui->threshhold->setEnabled(false);
-        ui->eps->setEnabled(false);
-        ui->minPts->setEnabled(false);
-        ui->ppf->setEnabled(false);
-        ui->inteval->setEnabled(false);
-        ui->cluster->setEnabled(false);
-        ui->thresh->setEnabled(false);
-        ui->rgb->setEnabled(false);
-        ui->findVials->setEnabled(false);
-        ui->preview->setEnabled(false);
-        ui->output->setEnabled(false);
-        ui->saveImages->setEnabled(false);
+        this->setImage(drawVials(this->flyCounter.getVials(), cameraImage));
     }
     else
     {
-        ui->startButton->setEnabled(true);
-        ui->stopButton->setEnabled(false);
-        ui->threshhold->setEnabled(true);
-        ui->eps->setEnabled(true);
-        ui->minPts->setEnabled(true);
-        ui->ppf->setEnabled(true);
-        ui->inteval->setEnabled(true);
-        ui->cluster->setEnabled(true);
-        ui->thresh->setEnabled(true);
-        ui->rgb->setEnabled(true);
-        ui->findVials->setEnabled(true);
-        ui->preview->setEnabled(true);
-        ui->output->setEnabled(true);
-        ui->saveImages->setEnabled(true);
+        this->setImage(cameraImage);
     }
+    this->flyCounter.unlock();
 }
 
-void MainWindow::showImage()
+void MainWindow::showClusterImage()
 {
-    scn->clear();
-    QGraphicsPixmapItem* pixItem = new QGraphicsPixmapItem(this->image);
-    scn->addItem(pixItem);
+    this->flyCounter.lock();
+    this->setImage(this->flyCounter.getClusterImage());
+    this->flyCounter.unlock();
 }
 
-void MainWindow::on_startButton_clicked()
+void MainWindow::showThresholdImage()
 {
-    isRunning(true);
-    counter.run();
+    this->flyCounter.lock();
+    this->setImage(this->flyCounter.getThresholdImage());
+    this->flyCounter.unlock();
 }
 
-void MainWindow::on_stopButton_clicked()
+/* update the spin box values of the lead/round/shake timer after validating the model */
+void MainWindow::updateTimeSpinners()
 {
-    isRunning(false);
-    counter.stop();
+    this->ui->leadTime->setValue(convertToInt(this->flyCounter.getLeadTime()));
+    this->ui->roundTime->setValue(convertToInt(this->flyCounter.getRoundTime()));
+    this->ui->shakeTime->setValue(convertToInt(this->flyCounter.getShakeTime()));
 }
 
-QPixmap MainWindow::convertMat(const cv::Mat &image)
+/* dis-/enables the user interface widgets */
+void MainWindow::userInterfaceEnabled(bool enabled)
 {
-    QImage::Format format = QImage::Format_RGB888;
-    if(image.type() != CV_8UC3)
-        format = QImage::Format_Indexed8;
+    /* disable the interface during the run */
+    this->ui->start->setEnabled(enabled);
+    this->ui->stop->setEnabled(!enabled);
+
+    /* image settings */
+    this->ui->detectDevices->setEnabled(enabled);
+    this->ui->displayVials->setEnabled(enabled);
+    this->ui->refresh->setEnabled(enabled);
+
+    /* experiment settings */
+    this->ui->leadTime->setEnabled(enabled);
+    this->ui->roundTime->setEnabled(enabled);
+    this->ui->shakeTime->setEnabled(enabled);
+
+    /* analysis */
+    this->ui->epsilon->setEnabled(enabled);
+    this->ui->minPoints->setEnabled(enabled);
+    this->ui->pixelsPerFly->setEnabled(enabled);
+    this->ui->threshold->setEnabled(enabled);
+    this->ui->vialSize->setEnabled(enabled);
+
+    /* results */
+    this->ui->outputPath->setEnabled(enabled);
+    this->ui->outputPathBrowser->setEnabled(enabled);
+    this->ui->saveImages->setEnabled(enabled);
+}
+
+/** public **/
+
+ViewMode MainWindow::getViewMode()
+{
+    return (ViewMode)this->ui->mode->currentIndex();
+}
+
+/* converts a cv image (matrix) to a qt pixmap object */
+QPixmap MainWindow::toPixmap(const cv::Mat &image)
+{
+    QImage::Format format = image.type() != CV_8UC3 ? QImage::Format_Indexed8 : QImage::Format_RGB888;
     return QPixmap::fromImage(QImage((unsigned char*) image.data, image.cols, image.rows, format));
 }
 
-void MainWindow::resizeEvent(QResizeEvent */*event*/)
+/** public slots **/
+
+void MainWindow::on_detectDevices_clicked()
 {
-    ui->graphicsView->fitInView(scn->itemsBoundingRect(),Qt::KeepAspectRatio);
+    // TODO: implement me
 }
 
-void MainWindow::onLoad()
+/* image settings */
+void MainWindow::on_mode_currentIndexChanged(int mode)
 {
-    ui->graphicsView->fitInView(scn->itemsBoundingRect(), Qt::KeepAspectRatio);
-}
-
-void MainWindow::on_thresh_toggled(bool checked)
-{
-    if(checked)
+    switch (mode)
     {
-        view_mode = VIEW_THRESH;
-        counter.calcThresh();
-        this->image = convertMat(counter.getThresh());
-        showImage();
+    case ViewMode::CAMERA:
+    {
+        this->showCameraImage();
+        break;
+    }
+    case ViewMode::THRESHOLD:
+        this->showThresholdImage();
+        break;
+    case ViewMode::CLUSTERS:
+        this->showClusterImage();
+        break;
+    default:
+        // TODO: debug
+        break;
     }
 }
 
-void MainWindow::on_rgb_toggled(bool checked)
+void MainWindow::on_refresh_clicked()
 {
-    if(checked)
-    {
-        view_mode = VIEW_RGB;
-        this->image = convertMat(counter.getImage());
-        updateImage();
-    }
-
+    this->flyCounter.updateImages();
+    this->on_mode_currentIndexChanged(this->getViewMode());
 }
 
-void MainWindow::on_threshhold_valueChanged(int)
+/* lead time setter that validates the input beforehand with the fly counter */
+void MainWindow::on_leadTime_valueChanged(int time)
 {
-    if(view_mode == VIEW_THRESH)
-    {
-        this->on_thresh_toggled(true);
-    }
+    this->flyCounter.validatedSetLeadTime(Seconds(time));
+    this->updateTimeSpinners();
 }
 
-void MainWindow::on_cluster_toggled(bool checked)
+/* round time setter that validates the input beforehand with the fly counter */
+void MainWindow::on_roundTime_valueChanged(int time)
 {
-    if(checked)
-    {
-        view_mode = VIEW_CLUSTERS;
-        if(!counter.running)
-        {
-            counter.calcThresh();
-            counter.calcClusters();
-        }
-        this->image = convertMat(counter.getClusters());
-        showImage();
-    }
-
+    this->flyCounter.validatedSetRoundTime(Seconds(time));
+    this->updateTimeSpinners();
 }
 
-void MainWindow::on_eps_valueChanged(int)
+/* shake time setter that validates the input beforehand with the fly counter */
+void MainWindow::on_shakeTime_valueChanged(int time)
 {
-    if(view_mode == VIEW_CLUSTERS)
-    {
-        this->on_cluster_toggled(true);
-    }
+    this->flyCounter.validatedSetShakeTime(Seconds(time));
+    this->updateTimeSpinners();
 }
 
-void MainWindow::on_minPts_valueChanged(int)
+/* analysis parameters */
+void MainWindow::on_epsilon_valueChanged(int epsilon)
 {
-    if(view_mode == VIEW_CLUSTERS)
-    {
-        this->on_cluster_toggled(true);
-    }
+    this->flyCounter.setEpsilon(epsilon);
 }
 
-void MainWindow::on_ppf_valueChanged(int)
+void MainWindow::on_minPoints_valueChanged(int minPoints)
 {
-    if(view_mode == VIEW_CLUSTERS)
-    {
-        this->on_cluster_toggled(true);
-    }
+    this->flyCounter.setMinPoints(minPoints);
 }
 
-void MainWindow::on_preview_clicked()
+void MainWindow::on_pixelsPerFly_valueChanged(int pixelsPerFly)
 {
-    this->counter.updateImage();    
-    updateImage();
-
+    this->flyCounter.setPixelsPerFly(pixelsPerFly);
 }
 
-void MainWindow::updateImage()
+void MainWindow::on_threshold_valueChanged(int threshold)
 {
-    switch(view_mode)
-    {
-        case VIEW_RGB :
-        {
-            auto img = counter.getImage().clone();
-            int counter = 0;
-            for (auto vial : this->vials)
-            {
-                cv::circle(img,cv::Point(vial[0],vial[1]),vial[2],cv::Scalar(0,255,0),5);
-                std::stringstream s;
-                s << counter++;
-                cv::putText(img,s.str(),cv::Point(vial[0]-10,vial[1]+10),0,1,cv::Scalar(0,255,0),4);
-            }
-            this->image = convertMat(img);
-            break;
-        }
-        case VIEW_THRESH : this->image = convertMat(counter.getThresh());break;
-        case VIEW_CLUSTERS : this->image = convertMat(counter.getClusters());break;
-    }
-    showImage();
-
+    this->flyCounter.setThreshold(threshold);
 }
 
-void MainWindow::on_output_textEdited(const QString &arg1)
+void MainWindow::on_vialSize_valueChanged(int vialSize)
 {
-    counter.setOutput(arg1.toStdString());
+    this->flyCounter.setVialSize(vialSize);
 }
 
-void MainWindow::on_focus_valueChanged(int arg1)
+/* result settings */
+void MainWindow::on_outputPathBrowser_clicked()
 {
-    counter.setFocus(arg1);
-    this->counter.updateImage();
-    updateImage();
+    this->on_output_textEdited(QFileDialog::getExistingDirectory(this, "Output path", "/home"));
 }
 
-void MainWindow::on_findVials_clicked()
+void MainWindow::on_output_textEdited(const QString& path)
 {
-    this->vials.clear();
-    cv::Mat grey;
-    cv::cvtColor( counter.getImage(), grey, 7);
-    cv::HoughCircles(grey,this->vials, CV_HOUGH_GRADIENT,2,ui->vialsize->value()*2 ,100,100,ui->vialsize->value() - 20,ui->vialsize->value() + 20);
-    if (this->vials.size() == 0)
-        this->vials.push_back(cv::Vec3f(550,360,340));
-    std::sort(this->vials.begin(), this->vials.end(), compVials);
-    counter.setVials(this->vials);
-    this->updateImage();
-
+    this->flyCounter.setOutput(path.toStdString());
 }
 
 void MainWindow::on_saveImages_toggled(bool checked)
 {
-    this->counter.saveImages(checked);
+    this->flyCounter.storeImages(checked);
 }
 
-bool MainWindow::compVials(const cv::Vec3f& first, const cv::Vec3f& second)
+/* experiment execution */
+void MainWindow::on_startButton_clicked()
 {
-    int threshold = first[2];
-    if(std::abs(first[1]-second[1]) < threshold)
-        return first[0] < second[0];
-    return first[1] < second[1];
+    this->userInterfaceEnabled(false);
+    this->flyCounter.start();
 }
 
-void MainWindow::saveSettings(QString settings_path)
+void MainWindow::on_stopButton_clicked()
 {
-    QSettings settings(settings_path,QSettings::NativeFormat);
-    settings.setValue("minPts", ui->minPts->value());
-    settings.setValue("epsilon", ui->eps->value());
-    settings.setValue("focus", ui->focus->value());
-    settings.setValue("interval", ui->inteval->value());
-    settings.setValue("output", ui->output->text());
-    settings.setValue("ppf", ui->ppf->value());
-    settings.setValue("saveImages", ui->saveImages->isChecked());
-    settings.setValue("threshhold", ui->threshhold->value());
-    settings.setValue("vialsize", ui->vialsize->value());
+    this->userInterfaceEnabled(true);
+    this->flyCounter.stop();
 }
-void MainWindow::loadSettings(QString settings_path)
-{
-    if(settings_path == "")
-        return;
-    QSettings settings(settings_path,QSettings::NativeFormat);
-    ui->minPts->setValue(settings.value("minPts").toInt());
-    ui->eps->setValue(settings.value("epsilon").toInt());
-    ui->focus->setValue(settings.value("focus").toInt());
-    ui->inteval->setValue(settings.value("interval").toInt());
-    ui->output->setText(settings.value("output").toString());
-    ui->ppf->setValue(settings.value("ppf").toInt());
-    ui->saveImages->setChecked(settings.value("saveImages").toBool());
-    ui->threshhold->setValue(settings.value("threshhold").toInt());
-    ui->vialsize->setValue(settings.value("vialsize").toInt());
 
-    //Tiggers
-    ui->minPts->valueChanged(settings.value("minPts").toInt());
-    ui->eps->valueChanged(settings.value("epsilon").toInt());
-    ui->focus->valueChanged(settings.value("focus").toInt());
-    ui->inteval->valueChanged(settings.value("interval").toInt());
-    ui->output->textChanged(settings.value("output").toString());
-    ui->ppf->valueChanged(settings.value("ppf").toInt());
-    ui->saveImages->toggled(settings.value("saveImages").toBool());
-    ui->threshhold->valueChanged(settings.value("threshhold").toInt());
+void MainWindow::updateImage()
+{
+    this->on_mode_currentIndexChanged(this->getViewMode());
 }
 
 void MainWindow::on_actionLoad_triggered()
 {
-    QString filename = QFileDialog::getOpenFileName(this, "Open file");
-    this->loadSettings(filename);
+    QString settings_path = QFileDialog::getOpenFileName(this, "Load settings file");
+    if (settings_path.isEmpty()) return;
+    QSettings settings(settings_path,QSettings::NativeFormat);
+
+    this->ui->saveImages->toggled(settings.value(MainWindow::SAVE_IMAGES).toBool());
+    this->ui->leadTime->valueChanged(settings.value(MainWindow::LEAD_TIME).toInt());
+    this->ui->roundTime->valueChanged(settings.value(MainWindow::ROUND_TIME).toInt());
+    this->ui->shakeTime->valueChanged(settings.value(MainWindow::SHAKE_TIME).toInt());
+    this->ui->epsilon->valueChanged(settings.value(MainWindow::EPSILON).toInt());
+    this->ui->minPoints->valueChanged(settings.value(MainWindow::MIN_POINTS).toInt());
+    this->ui->pixelsPerFly->valueChanged(settings.value(MainWindow::PIXELS_PER_FLY).toInt());
+    this->ui->threshold->valueChanged(settings.value(MainWindow::THRESHOLD).toInt());
+    this->ui->vialSize->valueChanged(settings.value(MainWindow::VIAL_SIZE).toInt());
+    this->ui->outputPath->textChanged(settings.value(MainWindow::OUTPUT_PATH).toString());
+    this->ui->saveImages->toggled(settings.value(MainWindow::SAVE_IMAGES).toBool());
+    // needs to go last as it triggers the image update
+    this->ui->mode->setCurrentIndex(settings.value(MainWindow::MODE).toInt());
 }
 
 void MainWindow::on_actionSave_triggered()
 {
-    QString filename = QFileDialog::getSaveFileName(this, "Save file");
-    this->saveSettings(filename);
+    QString settings_path = QFileDialog::getSaveFileName(this, "Save settings file");
+    QSettings settings(settings_path, QSettings::NativeFormat);
+
+    settings.setValue(MainWindow::MODE,           this->ui->mode->currentIndex());
+    settings.setValue(MainWindow::DISPLAY_VIALS,  this->ui->displayVials->isChecked());
+    settings.setValue(MainWindow::LEAD_TIME,      this->ui->leadTime->value());
+    settings.setValue(MainWindow::ROUND_TIME,     this->ui->roundTime->value());
+    settings.setValue(MainWindow::SHAKE_TIME,     this->ui->shakeTime->value());
+    settings.setValue(MainWindow::EPSILON,        this->ui->epsilon->value());
+    settings.setValue(MainWindow::MIN_POINTS,     this->ui->minPoints->value());
+    settings.setValue(MainWindow::PIXELS_PER_FLY, this->ui->pixelsPerFly->value());
+    settings.setValue(MainWindow::THRESHOLD,      this->ui->threshold->value());
+    settings.setValue(MainWindow::VIAL_SIZE,      this->ui->vialSize->value());
+    settings.setValue(MainWindow::OUTPUT_PATH,    this->ui->outputPath->text());
+    settings.setValue(MainWindow::SAVE_IMAGES,    this->ui->saveImages->isChecked());
 }
 
 MainWindow::~MainWindow()
 {
+    this->flyCounter.stop();
     delete this->ui;
 }

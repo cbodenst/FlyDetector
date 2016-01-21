@@ -29,13 +29,13 @@ protected:
     libusb_device_handle* device;
 
     void shake();
+    void start();
+    void stop();
 
 public:
     Shaker();
 
-    void shakeFor(int millisecs=5000);
-    void start();
-    void stop();
+    void shakeFor(const Duration& shakeTime);
     
     ~Shaker();
 };

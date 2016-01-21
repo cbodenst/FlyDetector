@@ -19,7 +19,7 @@ public:
     virtual bool getImage(cv::Mat& mat);
     virtual bool setFocus(int value);
 
-    virtual ~WebCamera()
+    virtual ~WebCamera();
 };
 
 #endif // WEBCAMERA_H

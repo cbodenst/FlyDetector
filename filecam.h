@@ -18,7 +18,7 @@ public:
     FileCam(const std::string& folder, int frames);
 
     virtual bool getImage(cv::Mat& mat);
-    virtual inline bool setFocus(int) { return false; }
+    virtual bool setFocus(int focus);
 };
 
 #endif // FILECAM_H

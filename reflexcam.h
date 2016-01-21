@@ -9,14 +9,14 @@
 class ReflexCam : public Cam
 {
 protected:
-    Camera* cam;
+    Camera*    cam;
     GPContext* context;
 
 public:
     ReflexCam();
 
     virtual bool getImage(cv::Mat& mat);
-    virtual inline bool setFocus(int) { return false; }
+    virtual bool setFocus(int focus);
 
     virtual ~ReflexCam();
 };

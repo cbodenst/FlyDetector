@@ -3,8 +3,56 @@
 #include <iostream>
 #include <mutex>
 
+#include <timer.h>
+
 unsigned char Shaker::ON[]  = {0xFF, 0x01};
 unsigned char Shaker::OFF[] = {0xFD, 0x01};
+
+/** private **/
+
+void Shaker::shake()
+{
+    // start shaking, wait till end is reached, stop shaking
+    this->start();
+    while (true) {
+        this->mutex.lock();
+        // check whether the shaking deadline has been extended
+        bool needToShake = this->end > Clock::now();
+        this->mutex.unlock();
+
+        if (!needToShake)
+        {
+            break;
+        }
+        std::this_thread::sleep_until(this->end);
+    }
+    this->stop();
+}
+
+void Shaker::start()
+{
+     int written;
+
+     written = libusb_control_transfer(device, LIBUSB_REQUEST_TYPE_CLASS, LIBUSB_REQUEST_SET_CONFIGURATION, LIBUSB_REQUEST_SET_FEATURE, 0, Shaker::ON, Shaker::MSG_LEN, Shaker::TIMEOUT);
+     if (written != Shaker::MSG_LEN)
+     {
+         std::cerr  << "Could not write data" << std::endl;
+     }
+}
+
+
+void Shaker::stop()
+{
+     int written;
+
+     written = libusb_control_transfer(device, LIBUSB_REQUEST_TYPE_CLASS, LIBUSB_REQUEST_SET_CONFIGURATION, LIBUSB_REQUEST_SET_FEATURE, 0, Shaker::OFF, Shaker::MSG_LEN, Shaker::TIMEOUT);
+     if (written != Shaker::MSG_LEN)
+     {
+         std::cerr  << "Could not write data" << std::endl;
+     }
+}
+
+/** public **/
 
 Shaker::Shaker()
 {
@@ -44,36 +92,16 @@ Shaker::Shaker()
     }
 }
 
-void Shaker::shake()
-{
-    // start shaking, wait till end is reached, stop shaking
-    this->start();
-    while (true) {
-        this->mutex.lock();
-        // check whether the shaking deadline has been extended
-        bool need_to_shake = this->end > clock_t::now();
-        this->mutex.unlock();
-
-        if (!need_to_shake)
-        {
-            break;
-        }
-        std::this_thread::sleep_until(this->end);
-    }
-    this->stop();
-}
-
-
-void Shaker::shakeFor(int millisecs)
+void Shaker::shakeFor(const Duration& shakeTime)
 {   
     // shaker is running or ran
     if (this->thread.joinable())
     {
-        this->mutex.lock()
+        this->mutex.lock();
         // end of shaking is in future - still running, increase end
         if (this->end >= Clock::now())
         {
-            this->end += std::chrono::milliseconds(millisecs);
+            this->end += shakeTime;
             this->mutex.unlock();
             return;
         }
@@ -84,32 +112,9 @@ void Shaker::shakeFor(int millisecs)
         }
     }
     // SHAKE IT BABY!
-    this->end = Clock::now() + std::chrono::milliseconds(millisecs);
-    this->thread = std::thread(&Shaker::_shakeFor, this);
+    this->end = Clock::now() + shakeTime;
+    this->thread = std::thread(&Shaker::shake, this);
     this->mutex.unlock();
-}
-
-void Shaker::start()
-{
-     int written;
-
-     written = libusb_control_transfer(device, LIBUSB_REQUEST_TYPE_CLASS, LIBUSB_REQUEST_SET_CONFIGURATION, LIBUSB_REQUEST_SET_FEATURE, 0, Shaker::ON, Shaker::MSG_LEN, Shaker::TIMEOUT);
-     if (written != Shaker::MSG_LEN)
-     {
-         std::cerr  << "Could not write data" << std::endl;
-     }
-}
-
-
-void Shaker::stop()
-{
-     int written;
-
-     written = libusb_control_transfer(device, LIBUSB_REQUEST_TYPE_CLASS, LIBUSB_REQUEST_SET_CONFIGURATION, LIBUSB_REQUEST_SET_FEATURE, 0, Shaker::OFF, Shaker::MSG_LEN, Shaker::TIMEOUT);
-     if (written != Shaker::MSG_LEN)
-     {
-         std::cerr  << "Could not write data" << std::endl;
-     }
 }
 
 Shaker::~Shaker()

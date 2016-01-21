@@ -1,22 +1,23 @@
 #ifndef FLYCOUNTER_H
 #define FLYCOUNTER_H
 
+#include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
 
 #include <QObject>
-#include <QReadWriteLock>
-#include <QTime>
 
 #include <opencv2/opencv.hpp>
 
 #include "cam.h"
 #include "shaker.h"
 #include "timer.h"
+#include "vials.h"
 
-typedef cv::Vec3f         Vial;
-typedef std::vector<Vial> Vials;
+typedef std::vector<int>   Flies;
+typedef cv::Vec3b          Color;
+typedef std::vector<Color> Colors;
 
 class FlyCounter : public QObject
 {
@@ -24,28 +25,35 @@ class FlyCounter : public QObject
 
 private:
     /* experiment data */
-    std::string output;
-    bool        saveImages;
+    Duration leadTime;
+    Duration roundTime;
+    Duration shakeTime;
 
     /* images */
     cv::Mat cameraImage;
-    cv::Mat thresholdImage;
     cv::Mat clusterImage;
+    cv::Mat thresholdImage;
 
     /* analysis parameters */
     int   epsilon;
     int   minPoints;
-    int   measurementTime;
     int   numberOfFlies;
     int   pixelsPerFly;
     int   threshold;
+    int   vialSize;
     Vials vials;
+    Flies flies;
+
+    /* results */
+    std::string output;
+    bool        saveImages;
 
     /* devices */
     Cam*   camera;
     Shaker shaker;
 
     /* threaded execution */
+    std::mutex  imageLock;
     bool        running;
     std::thread thread;
 
@@ -53,12 +61,15 @@ private:
     std::vector<int>      numLabels;
     std::vector<ssize_t*> labels;
     std::vector<cv::Mat>  coords;
-    std::vector<int>      flies;
-    cv::Mat               calibration;
 
     /* internal implementation meat */
-    void        analyze();
-    void        detectCamera();
+    void detectCamera();
+    void process();
+
+    void updateCameraImage();
+    void updateThresholdImage();
+    void updateClusterImage();
+
     std::string toString(const Timepoint& time);
     void        writeImage(const Timepoint& time);
     void        writeResults(const Timepoint& time);
@@ -66,52 +77,73 @@ private:
 signals:
     /* GUI signals */
     void countUpdate(QString flies);
-    void imageUpdate(cv::Mat& image);
+    void imageUpdate();
     void timeUpdate(QString time);
 
 public:
-    explicit FlyCounter(QObject *parent = nullptr);
+    explicit FlyCounter(QObject* parent,
+                        const Duration& leadTime,
+                        const Duration& roundTime,
+                        const Duration& shakeTime,
+                        int epsilon,
+                        int minPoints,
+                        int pixelsPerFly,
+                        int threshold,
+                        int vialSize,
+                        const std::string& outputPath,
+                        bool saveImages);
+
+    static Colors COLORS;
 
     /* imaging getters */
-    inline const cv::Mat& getCameraImage()    { return this->cameraImage; }
-    inline const cv::Mat& getThresholdImage() { return this->thresholdImage; }
-    inline const cv::Mat& getClusterImage()   { return this->clusterImage; }
+    const cv::Mat& getCameraImage();
+    const cv::Mat& getThresholdImage();
+    const cv::Mat& getClusterImage();
+
+    /* experiment settings getters */
+    const Duration& getLeadTime();
+    const Duration& getRoundTime();
+    const Duration& getShakeTime();
 
     /* analysis parameter getters */
-    inline int  getMinPoints()       { return this->minPoints; }
-    inline int  getEpsilon()         { return this->epsilon; }
-    inline int  getMeasurementTime() { return this->measurementTime; }
-    inline int  getNumberOfFlies()   { return this->numberOfFlies; }
-    inline int  getPixelsPerFly()    { return this->pixelsPerFly; }
-    inline int  getThreshold()       { return this->threshold; }
-    inline bool isRunning()          { return this->running; }
+    int getEpsilon();
+    int getMinPoints();
+    int getPixelsPerFly();
+    int getThreshold();
+    int getVialSize();
+    bool isRunning();
+    const Vials& getVials();
 
-    /* image setters */
-    void setVials(Vials vials);
-    inline void setOutput(const std::string& out) { this->output = out; }
-    inline void storeImages(bool value)           { this->saveImages = value; }
+    /* validated setters */
+    void validatedSetLeadTime(const Duration& time);
+    void validatedSetRoundTime(const Duration& time);
+    void validatedSetShakeTime(const Duration& time);
 
-    /* start or stop the experiment */
+    /* results */
+    const Flies& getFlies();
+    const std::string& getOutput();
+
+    /* execution */
+    void lock();
+    void unlock();
+
     void start();
     void stop();
 
     /* image processing */
-    void calculateThresholdImage();
-    void calculateClusterImage();
-    int  count();
-    void updateCameraImage();
+    void updateImages();
 
     /* destructor */
     ~FlyCounter();
 
 public slots:
-    /* additional slot setters */
-    inline void setThreshold(int value)       { this->threshold = value; }
-    inline void setMinPoints(int value)       { this->minPoints = value; }
-    inline void setEpsilon(int value)         { this->epsilon = value; }
-    inline void setPixelsPerFly(int value)    { this->pixelsPerFly = value; }
-    inline void setMeasurementTime(int value) { this->measurementTime = value; }
-    inline void setFocus(int value)           { this->camera->setFocus(value); }
+    void setEpsilon(int value);
+    void setMinPoints(int value);
+    void setPixelsPerFly(int value);
+    void setThreshold(int value);
+    void setVialSize(int value);
+    void setOutput(const std::string& out);
+    void storeImages(bool value);
 };
 
 #endif // FLYCOUNTER_H

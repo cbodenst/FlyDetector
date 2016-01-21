@@ -1,22 +1,23 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
 #include <QGraphicsScene>
+#include <QMainWindow>
+#include <QString>
 
 #include <opencv2/opencv.hpp>
 
 #include "flycounter.h"
 
 /* view type set */
-enum View
+enum ViewMode
 {
-    RGB       = 1,
-    THRESHOLD = 2,
-    CLUSTERS  = 3
+    CAMERA    = 0,
+    THRESHOLD = 1,
+    CLUSTERS  = 2
 };
 
-namespace UI {
+namespace Ui {
     class MainWindow;
 }
 
@@ -26,56 +27,82 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 private:
-    UI::MainWindow *ui;
-
+    Ui::MainWindow* ui;
     QPixmap         image;
     QGraphicsScene* scene;
-
     FlyCounter      flyCounter;
-    Vials           vials;
 
-    View            mode;
-    /*Adjust Image size to Window size*/
-    QPixmap         toPixmap(const cv::Mat &image);
-    void resizeEvent(QResizeEvent* event);
+    /* initialization */
+    void setupUI();
+    void setupSignals();
 
-    static bool compareVials(const Vial& first, const Vial& second);
-    void saveSettings(QString settings_path);
-    void loadSettings(QString settings_path);
+    /* image setters */
+    void setImage(const cv::Mat& image);
+    void setImage(const QPixmap& image);
+    void setPixmap();
+    void showCameraImage();
+    void showClusterImage();
+    void showThresholdImage();
+
+    /* interface updates */
+    void updateTimeSpinners();
+    void userInterfaceEnabled(bool enabled);
+
 private slots:
-    void onLoad();
-
-    void on_startButton_clicked();
-    void on_stopButton_clicked();
-
-    void on_saveImages_toggled(bool checked);
-    void on_output_textEdited(const QString &arg1);
-    void on_actionLoad_triggered();
-    void on_actionSave_triggered();
-
-    void on_cluster_toggled(bool checked);
-    void on_findVials_clicked();
-    void on_preview_clicked();
-    void on_rgb_toggled(bool checked);
-    void on_threshold_toggled(bool checked);
-    void on_threshhold_valueChanged(int arg1);
-
-    void on_focus_valueChanged(int arg1);
-    void on_epsilon_valueChanged(int arg1);
-    void on_minPoints_valueChanged(int arg1);
-    void on_pixelsPerFly_valueChanged(int arg1);
-
+    void resizeEvent(QResizeEvent* event);
     void updateImage();
 
 public:
-    explicit MainWindow(QWidget *parent=nullptr);
+    static const QString MODE;
+    static const QString DISPLAY_VIALS;
+    static const QString LEAD_TIME;
+    static const QString ROUND_TIME;
+    static const QString SHAKE_TIME;
+    static const QString EPSILON;
+    static const QString MIN_POINTS;
+    static const QString PIXELS_PER_FLY;
+    static const QString THRESHOLD;
+    static const QString VIAL_SIZE;
+    static const QString OUTPUT_PATH;
+    static const QString SAVE_IMAGES;
+
+    explicit MainWindow(QWidget* parent=nullptr);
+
+    ViewMode    getViewMode();
+    QPixmap toPixmap(const cv::Mat& image);
+
     ~MainWindow();
 
 public slots:
-    /* checks if experiment is running and disables experiment manipulation */
-     void isRunning(bool running);
-     /* displays the image in the GUI */
-     void showImage();
+    /* image settings */
+    void on_detectDevices_clicked();
+    void on_mode_currentIndexChanged(int index);
+    void on_refresh_clicked();
+
+    /* experiment parameter settings */
+    void on_leadTime_valueChanged(int time);
+    void on_roundTime_valueChanged(int time);
+    void on_shakeTime_valueChanged(int time);
+
+    /* analysis parameter setters */
+    void on_epsilon_valueChanged(int epsilon);
+    void on_minPoints_valueChanged(int minPoints);
+    void on_pixelsPerFly_valueChanged(int pixelsPerFly);
+    void on_threshold_valueChanged(int threshold);
+    void on_vialSize_valueChanged(int vialSize);
+
+    /* results */
+    void on_outputPathBrowser_clicked();
+    void on_output_textEdited(const QString& path);
+    void on_saveImages_toggled(bool checked);
+
+    /* experiment execution */
+    void on_startButton_clicked();
+    void on_stopButton_clicked();
+
+    /* interface settings */
+    void on_actionLoad_triggered();
+    void on_actionSave_triggered();
 };
 
 #endif // MAINWINDOW_H

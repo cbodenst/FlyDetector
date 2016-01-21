@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1224</width>
-    <height>753</height>
+    <height>834</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -39,37 +39,10 @@ QLabel {
 	margin-right: 10px;
 }</string>
    </property>
-   <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0">
+   <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0">
     <property name="spacing">
      <number>6</number>
     </property>
-    <item row="0" column="4">
-     <widget class="QLabel" name="vialLabel">
-      <property name="font">
-       <font>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="text">
-       <string>Vials</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="2">
-     <widget class="QPushButton" name="preview">
-      <property name="text">
-       <string>Preview</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="5">
-     <widget class="QPushButton" name="detectVials">
-      <property name="text">
-       <string>Detect</string>
-      </property>
-     </widget>
-    </item>
     <item row="1" column="9">
      <layout class="QVBoxLayout" name="verticalLayout_3">
       <item>
@@ -79,41 +52,6 @@ QLabel {
         </property>
         <layout class="QFormLayout" name="formLayout_3">
          <item row="0" column="0">
-          <widget class="QLabel" name="focusLabel">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>120</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Focus</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QSpinBox" name="focus">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>170</width>
-             <height>0</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
           <widget class="QLabel" name="roundLabel">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
@@ -128,11 +66,11 @@ QLabel {
             </size>
            </property>
            <property name="text">
-            <string>Round Time (s)</string>
+            <string>Round Time</string>
            </property>
           </widget>
          </item>
-         <item row="1" column="1">
+         <item row="0" column="1">
           <widget class="QSpinBox" name="roundTime">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -145,6 +83,103 @@ QLabel {
              <width>170</width>
              <height>0</height>
             </size>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="suffix">
+            <string>s</string>
+           </property>
+           <property name="minimum">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <number>999</number>
+           </property>
+           <property name="value">
+            <number>60</number>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="shakeTimeLabel">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>120</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Shake Time</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QSpinBox" name="shakeTime">
+           <property name="minimumSize">
+            <size>
+             <width>170</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="suffix">
+            <string>s</string>
+           </property>
+           <property name="maximum">
+            <number>999</number>
+           </property>
+           <property name="value">
+            <number>5</number>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="leadTimeLabel">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>120</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Lead Time</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QSpinBox" name="leadTime">
+           <property name="minimumSize">
+            <size>
+             <width>170</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="suffix">
+            <string>s</string>
+           </property>
+           <property name="maximum">
+            <number>999</number>
+           </property>
+           <property name="value">
+            <number>10</number>
            </property>
           </widget>
          </item>
@@ -229,6 +264,18 @@ QLabel {
            <property name="styleSheet">
             <string notr="true"/>
            </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="suffix">
+            <string>px</string>
+           </property>
+           <property name="maximum">
+            <number>999</number>
+           </property>
+           <property name="value">
+            <number>300</number>
+           </property>
           </widget>
          </item>
          <item row="1" column="0">
@@ -269,6 +316,15 @@ QLabel {
              <width>170</width>
              <height>0</height>
             </size>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="maximum">
+            <number>255</number>
+           </property>
+           <property name="value">
+            <number>100</number>
            </property>
           </widget>
          </item>
@@ -311,6 +367,18 @@ QLabel {
              <height>16777215</height>
             </size>
            </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="minimum">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <number>9999</number>
+           </property>
+           <property name="value">
+            <number>5</number>
+           </property>
           </widget>
          </item>
          <item row="3" column="0">
@@ -345,6 +413,18 @@ QLabel {
              <width>170</width>
              <height>0</height>
             </size>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="minimum">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <number>9999</number>
+           </property>
+           <property name="value">
+            <number>50</number>
            </property>
           </widget>
          </item>
@@ -384,6 +464,18 @@ QLabel {
            <property name="styleSheet">
             <string notr="true"/>
            </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="minimum">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <number>9999</number>
+           </property>
+           <property name="value">
+            <number>300</number>
+           </property>
           </widget>
          </item>
         </layout>
@@ -422,22 +514,6 @@ QLabel {
            </property>
            <property name="text">
             <string>Path</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QLineEdit" name="outputPath">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>170</width>
-             <height>0</height>
-            </size>
            </property>
           </widget>
          </item>
@@ -496,6 +572,51 @@ QLabel {
            </property>
           </widget>
          </item>
+         <item row="0" column="1">
+          <layout class="QHBoxLayout" name="horizontalLayout">
+           <item>
+            <widget class="QLineEdit" name="outputPath">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>/home/</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="outputPathBrowser">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>20</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>...</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
         </layout>
        </widget>
       </item>
@@ -533,7 +654,7 @@ QLabel {
             </size>
            </property>
            <property name="text">
-            <string>Passed Time (s)</string>
+            <string>Passed Time</string>
            </property>
           </widget>
          </item>
@@ -559,7 +680,7 @@ QLabel {
          <item row="0" column="1">
           <widget class="QLabel" name="timer">
            <property name="text">
-            <string>0</string>
+            <string>0s</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>
@@ -627,6 +748,9 @@ QLabel {
         </item>
         <item row="0" column="1">
          <widget class="QPushButton" name="stop">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -648,19 +772,33 @@ QLabel {
       </item>
      </layout>
     </item>
-    <item row="1" column="0" rowspan="2" colspan="9">
-     <widget class="QGraphicsView" name="images"/>
+    <item row="0" column="6">
+     <widget class="Line" name="line_1">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+     </widget>
     </item>
-    <item row="0" column="7">
-     <widget class="QLabel" name="devicesLabel">
-      <property name="font">
-       <font>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
+    <item row="0" column="8">
+     <widget class="QPushButton" name="detectDevices">
+      <property name="text">
+       <string>Detect</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="5">
+     <widget class="QCheckBox" name="displayVials">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
       </property>
       <property name="text">
-       <string>Devices</string>
+       <string/>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
       </property>
      </widget>
     </item>
@@ -702,17 +840,46 @@ QLabel {
       </item>
      </widget>
     </item>
-    <item row="0" column="6">
-     <widget class="Line" name="line_1">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
+    <item row="1" column="0" rowspan="2" colspan="9">
+     <widget class="QGraphicsView" name="image">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
       </property>
      </widget>
     </item>
-    <item row="0" column="8">
-     <widget class="QPushButton" name="detectDevices">
+    <item row="0" column="7">
+     <widget class="QLabel" name="devicesLabel">
+      <property name="font">
+       <font>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
       <property name="text">
-       <string>Detect</string>
+       <string>Devices</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="2">
+     <widget class="QPushButton" name="refresh">
+      <property name="text">
+       <string>Refresh</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="4">
+     <widget class="QLabel" name="displayVialsLabel">
+      <property name="font">
+       <font>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Display Vials</string>
       </property>
      </widget>
     </item>
@@ -724,19 +891,39 @@ QLabel {
      </widget>
     </item>
     <item row="3" column="0" colspan="10">
-     <widget class="QScrollArea" name="messageArea">
+     <widget class="QScrollArea" name="messageScrollArea">
       <property name="widgetResizable">
        <bool>true</bool>
       </property>
-      <widget class="QWidget" name="messages">
+      <widget class="QWidget" name="scrollAreaWidgetContents_3">
        <property name="geometry">
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>1204</width>
-         <height>73</height>
+         <width>1191</width>
+         <height>75</height>
         </rect>
        </property>
+       <layout class="QVBoxLayout" name="verticalLayout_5">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QPlainTextEdit" name="messages"/>
+        </item>
+       </layout>
       </widget>
      </widget>
     </item>

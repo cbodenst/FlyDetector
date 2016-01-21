@@ -26,7 +26,8 @@ SOURCES += main.cpp\
     dbscan/points.cpp \
     dbscan/rules.cpp \
     dbscan/space.cpp \
-    shaker.cpp
+    shaker.cpp \
+    vials.cpp
 
 HEADERS  += mainwindow.h \
     cam.h \
@@ -41,8 +42,8 @@ HEADERS  += mainwindow.h \
     dbscan/space.h \
     dbscan/util.h \
     shaker.h \
-    settings.h \
-    timer.h
+    timer.h \
+    vials.h
 
 FORMS    += mainwindow.ui
 
