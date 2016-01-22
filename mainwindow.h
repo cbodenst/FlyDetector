@@ -28,6 +28,7 @@ class MainWindow : public QMainWindow
 
 private:
     Ui::MainWindow* ui;
+
     QPixmap         image;
     QGraphicsScene* scene;
     FlyCounter      flyCounter;
@@ -35,6 +36,7 @@ private:
     /* initialization */
     void setupUI();
     void setupSignals();
+    void setupSettings();
 
     /* image setters */
     void setImage(const cv::Mat& image);
@@ -48,11 +50,18 @@ private:
     void updateTimeSpinners();
     void userInterfaceEnabled(bool enabled);
 
+    /* settings loading/saving */
+    void loadSettings(const QString& path);
+    void saveSettings(const QString& path);
+
 private slots:
+    void onLoadResize();
     void resizeEvent(QResizeEvent* event);
     void updateImage();
 
 public:
+    static const QString DEFAULT_PATH;
+
     static const QString MODE;
     static const QString DISPLAY_VIALS;
     static const QString LEAD_TIME;
@@ -92,13 +101,13 @@ public slots:
     void on_vialSize_valueChanged(int vialSize);
 
     /* results */
+    void on_outputPath_textChanged(const QString& path);
     void on_outputPathBrowser_clicked();
-    void on_output_textEdited(const QString& path);
     void on_saveImages_toggled(bool checked);
 
     /* experiment execution */
-    void on_startButton_clicked();
-    void on_stopButton_clicked();
+    void on_start_clicked();
+    void on_stop_clicked();
 
     /* interface settings */
     void on_actionLoad_triggered();

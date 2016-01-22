@@ -1,4 +1,5 @@
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QGraphicsPixmapItem>
 #include <QSettings>
 #include <QTimer>
@@ -8,6 +9,9 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "vials.h"
+
+/* settings path */
+const QString MainWindow::DEFAULT_PATH   = "./default_settings";
 
 /* settings file keys */
 const QString MainWindow::MODE           = "mode";
@@ -23,32 +27,29 @@ const QString MainWindow::VIAL_SIZE      = "vialSize";
 const QString MainWindow::OUTPUT_PATH    = "outputPath";
 const QString MainWindow::SAVE_IMAGES    = "saveImages";
 
-MainWindow::MainWindow(QWidget *parent) :
+MainWindow::MainWindow(QWidget* parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    flyCounter(this,
-               Seconds(this->ui->leadTime->value()),
-               Seconds(this->ui->roundTime->value()),
-               Seconds(this->ui->shakeTime->value()),
-               this->ui->epsilon->value(),
-               this->ui->minPoints->value(),
-               this->ui->pixelsPerFly->value(),
-               this->ui->threshold->value(),
-               this->ui->vialSize->value(),
-               this->ui->outputPath->text().toStdString(),
-               this->ui->saveImages->isChecked())
+    flyCounter(this)
 {
     this->setupUI();
     this->setupSignals();
+    this->setupSettings();
+    this->flyCounter.updateImages();
 
     /* XXX: workaround for image resize bug */
-    QTimer::singleShot(0, this, SLOT(resizeEvent()));
+    QTimer::singleShot(0, this, SLOT(onLoadResize()));
 }
 
 /** private **/
 
+void MainWindow::onLoadResize()
+{
+    this->resizeEvent(nullptr);
+}
+
 /* window resize handler */
-void MainWindow::resizeEvent(QResizeEvent* /*event*/)
+void MainWindow::resizeEvent(QResizeEvent*)
 {
     this->ui->image->fitInView(this->scene->itemsBoundingRect(), Qt::KeepAspectRatio);
 }
@@ -59,16 +60,30 @@ void MainWindow::setupUI()
     this->ui->setupUi(this);
     this->scene = new QGraphicsScene(this->ui->image);
     this->ui->image->setScene(this->scene);
-    this->showCameraImage();
-    this->resizeEvent(nullptr);
+    this->showMaximized();
 }
 
 /* registers the QT interface signals */
 void MainWindow::setupSignals()
 {
-    connect(&this->flyCounter, SIGNAL(countUpdate(QString)),        this->ui->flies, SLOT(setText(QString)));
-    connect(&this->flyCounter, SIGNAL(imageUpdate(const cv::Mat&)), this,            SLOT(updateImage()));
-    connect(&this->flyCounter, SIGNAL(timeUpdate(QString)),         this->ui->timer, SLOT(setText(QString)));
+    connect(&this->flyCounter, SIGNAL(countUpdate(QString)), this->ui->flies, SLOT(setText(QString)));
+    connect(&this->flyCounter, SIGNAL(imageUpdate()),        this,            SLOT(updateImage()));
+    connect(&this->flyCounter, SIGNAL(timeUpdate(QString)),  this->ui->timer, SLOT(setText(QString)));
+}
+
+/* loads initial settings from the default location, if not present creates them first from the value set in the interface */
+void MainWindow::setupSettings()
+{
+    QFileInfo fileInfo(DEFAULT_PATH);
+    if (fileInfo.exists() && fileInfo.isFile())
+    {
+        this->loadSettings(DEFAULT_PATH);
+    }
+    else
+    {
+        this->saveSettings(DEFAULT_PATH);
+        this->loadSettings(DEFAULT_PATH); // triggers the fly counter setters
+    }
 }
 
 /* set the passed OpenCV image in the graphics view */
@@ -158,6 +173,45 @@ void MainWindow::userInterfaceEnabled(bool enabled)
     this->ui->outputPath->setEnabled(enabled);
     this->ui->outputPathBrowser->setEnabled(enabled);
     this->ui->saveImages->setEnabled(enabled);
+}
+
+/* settings loading/saving */
+void MainWindow::loadSettings(const QString& path)
+{
+    QSettings settings(path, QSettings::NativeFormat);
+
+    this->ui->saveImages->toggled(settings.value(MainWindow::SAVE_IMAGES).toBool());
+    this->ui->leadTime->valueChanged(settings.value(MainWindow::LEAD_TIME).toInt());
+    this->ui->roundTime->valueChanged(settings.value(MainWindow::ROUND_TIME).toInt());
+    this->ui->shakeTime->valueChanged(settings.value(MainWindow::SHAKE_TIME).toInt());
+    this->ui->epsilon->valueChanged(settings.value(MainWindow::EPSILON).toInt());
+    this->ui->minPoints->valueChanged(settings.value(MainWindow::MIN_POINTS).toInt());
+    this->ui->pixelsPerFly->valueChanged(settings.value(MainWindow::PIXELS_PER_FLY).toInt());
+    this->ui->threshold->valueChanged(settings.value(MainWindow::THRESHOLD).toInt());
+    this->ui->vialSize->valueChanged(settings.value(MainWindow::VIAL_SIZE).toInt());
+    this->ui->outputPath->textChanged(settings.value(MainWindow::OUTPUT_PATH).toString());
+    this->ui->saveImages->toggled(settings.value(MainWindow::SAVE_IMAGES).toBool());
+    // needs to go last as it triggers the image update
+    this->ui->mode->setCurrentIndex(settings.value(MainWindow::MODE).toInt());
+
+}
+
+void MainWindow::saveSettings(const QString& path)
+{
+    QSettings settings(path, QSettings::NativeFormat);
+
+    settings.setValue(MainWindow::MODE,           this->ui->mode->currentIndex());
+    settings.setValue(MainWindow::DISPLAY_VIALS,  this->ui->displayVials->isChecked());
+    settings.setValue(MainWindow::LEAD_TIME,      this->ui->leadTime->value());
+    settings.setValue(MainWindow::ROUND_TIME,     this->ui->roundTime->value());
+    settings.setValue(MainWindow::SHAKE_TIME,     this->ui->shakeTime->value());
+    settings.setValue(MainWindow::EPSILON,        this->ui->epsilon->value());
+    settings.setValue(MainWindow::MIN_POINTS,     this->ui->minPoints->value());
+    settings.setValue(MainWindow::PIXELS_PER_FLY, this->ui->pixelsPerFly->value());
+    settings.setValue(MainWindow::THRESHOLD,      this->ui->threshold->value());
+    settings.setValue(MainWindow::VIAL_SIZE,      this->ui->vialSize->value());
+    settings.setValue(MainWindow::OUTPUT_PATH,    this->ui->outputPath->text());
+    settings.setValue(MainWindow::SAVE_IMAGES,    this->ui->saveImages->isChecked());
 }
 
 /** public **/
@@ -259,10 +313,10 @@ void MainWindow::on_vialSize_valueChanged(int vialSize)
 /* result settings */
 void MainWindow::on_outputPathBrowser_clicked()
 {
-    this->on_output_textEdited(QFileDialog::getExistingDirectory(this, "Output path", "/home"));
+    this->on_outputPath_textChanged(QFileDialog::getExistingDirectory(this, "Output path", "/home"));
 }
 
-void MainWindow::on_output_textEdited(const QString& path)
+void MainWindow::on_outputPath_textChanged(const QString& path)
 {
     this->flyCounter.setOutput(path.toStdString());
 }
@@ -273,13 +327,13 @@ void MainWindow::on_saveImages_toggled(bool checked)
 }
 
 /* experiment execution */
-void MainWindow::on_startButton_clicked()
+void MainWindow::on_start_clicked()
 {
     this->userInterfaceEnabled(false);
     this->flyCounter.start();
 }
 
-void MainWindow::on_stopButton_clicked()
+void MainWindow::on_stop_clicked()
 {
     this->userInterfaceEnabled(true);
     this->flyCounter.stop();
@@ -292,46 +346,24 @@ void MainWindow::updateImage()
 
 void MainWindow::on_actionLoad_triggered()
 {
-    QString settings_path = QFileDialog::getOpenFileName(this, "Load settings file");
-    if (settings_path.isEmpty()) return;
-    QSettings settings(settings_path,QSettings::NativeFormat);
-
-    this->ui->saveImages->toggled(settings.value(MainWindow::SAVE_IMAGES).toBool());
-    this->ui->leadTime->valueChanged(settings.value(MainWindow::LEAD_TIME).toInt());
-    this->ui->roundTime->valueChanged(settings.value(MainWindow::ROUND_TIME).toInt());
-    this->ui->shakeTime->valueChanged(settings.value(MainWindow::SHAKE_TIME).toInt());
-    this->ui->epsilon->valueChanged(settings.value(MainWindow::EPSILON).toInt());
-    this->ui->minPoints->valueChanged(settings.value(MainWindow::MIN_POINTS).toInt());
-    this->ui->pixelsPerFly->valueChanged(settings.value(MainWindow::PIXELS_PER_FLY).toInt());
-    this->ui->threshold->valueChanged(settings.value(MainWindow::THRESHOLD).toInt());
-    this->ui->vialSize->valueChanged(settings.value(MainWindow::VIAL_SIZE).toInt());
-    this->ui->outputPath->textChanged(settings.value(MainWindow::OUTPUT_PATH).toString());
-    this->ui->saveImages->toggled(settings.value(MainWindow::SAVE_IMAGES).toBool());
-    // needs to go last as it triggers the image update
-    this->ui->mode->setCurrentIndex(settings.value(MainWindow::MODE).toInt());
+    QString settingsPath = QFileDialog::getOpenFileName(this, "Load settings file");
+    if (settingsPath.isEmpty())
+    {
+            return;
+    }
+    this->loadSettings(settingsPath);
 }
 
 void MainWindow::on_actionSave_triggered()
 {
-    QString settings_path = QFileDialog::getSaveFileName(this, "Save settings file");
-    QSettings settings(settings_path, QSettings::NativeFormat);
-
-    settings.setValue(MainWindow::MODE,           this->ui->mode->currentIndex());
-    settings.setValue(MainWindow::DISPLAY_VIALS,  this->ui->displayVials->isChecked());
-    settings.setValue(MainWindow::LEAD_TIME,      this->ui->leadTime->value());
-    settings.setValue(MainWindow::ROUND_TIME,     this->ui->roundTime->value());
-    settings.setValue(MainWindow::SHAKE_TIME,     this->ui->shakeTime->value());
-    settings.setValue(MainWindow::EPSILON,        this->ui->epsilon->value());
-    settings.setValue(MainWindow::MIN_POINTS,     this->ui->minPoints->value());
-    settings.setValue(MainWindow::PIXELS_PER_FLY, this->ui->pixelsPerFly->value());
-    settings.setValue(MainWindow::THRESHOLD,      this->ui->threshold->value());
-    settings.setValue(MainWindow::VIAL_SIZE,      this->ui->vialSize->value());
-    settings.setValue(MainWindow::OUTPUT_PATH,    this->ui->outputPath->text());
-    settings.setValue(MainWindow::SAVE_IMAGES,    this->ui->saveImages->isChecked());
+    QString settingsPath = QFileDialog::getSaveFileName(this, "Save settings file");
+    this->saveSettings(settingsPath);
 }
 
 MainWindow::~MainWindow()
 {
     this->flyCounter.stop();
+    this->saveSettings(DEFAULT_PATH);
+
     delete this->ui;
 }

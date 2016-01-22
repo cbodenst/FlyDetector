@@ -49,21 +49,17 @@ private:
     bool        saveImages;
 
     /* devices */
-    Cam*   camera;
-    Shaker shaker;
+    Cam*    camera;
+    Shaker* shaker;
 
     /* threaded execution */
     std::mutex  imageLock;
     bool        running;
     std::thread thread;
 
-    /* clustering */
-    std::vector<int>      numLabels;
-    std::vector<ssize_t*> labels;
-    std::vector<cv::Mat>  coords;
-
     /* internal implementation meat */
     void detectCamera();
+    void detectShaker();
     void process();
 
     void updateCameraImage();
@@ -81,19 +77,9 @@ signals:
     void timeUpdate(QString time);
 
 public:
-    explicit FlyCounter(QObject* parent,
-                        const Duration& leadTime,
-                        const Duration& roundTime,
-                        const Duration& shakeTime,
-                        int epsilon,
-                        int minPoints,
-                        int pixelsPerFly,
-                        int threshold,
-                        int vialSize,
-                        const std::string& outputPath,
-                        bool saveImages);
-
     static Colors COLORS;
+
+    explicit FlyCounter(QObject* parent=nullptr);
 
     /* imaging getters */
     const cv::Mat& getCameraImage();
@@ -126,6 +112,8 @@ public:
     /* execution */
     void lock();
     void unlock();
+
+    void detectDevices();
 
     void start();
     void stop();

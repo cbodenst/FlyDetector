@@ -1,16 +1,14 @@
-#include "shaker.h"
+#include "usbshaker.h"
 
 #include <iostream>
 #include <mutex>
 
-#include <timer.h>
-
-unsigned char Shaker::ON[]  = {0xFF, 0x01};
-unsigned char Shaker::OFF[] = {0xFD, 0x01};
+unsigned char USBShaker::ON[]  = {0xFF, 0x01};
+unsigned char USBShaker::OFF[] = {0xFD, 0x01};
 
 /** private **/
 
-void Shaker::shake()
+void USBShaker::shake()
 {
     // start shaking, wait till end is reached, stop shaking
     this->start();
@@ -29,24 +27,24 @@ void Shaker::shake()
     this->stop();
 }
 
-void Shaker::start()
+void USBShaker::start()
 {
      int written;
 
-     written = libusb_control_transfer(device, LIBUSB_REQUEST_TYPE_CLASS, LIBUSB_REQUEST_SET_CONFIGURATION, LIBUSB_REQUEST_SET_FEATURE, 0, Shaker::ON, Shaker::MSG_LEN, Shaker::TIMEOUT);
-     if (written != Shaker::MSG_LEN)
+     written = libusb_control_transfer(device, LIBUSB_REQUEST_TYPE_CLASS, LIBUSB_REQUEST_SET_CONFIGURATION, LIBUSB_REQUEST_SET_FEATURE, 0, USBShaker::ON, USBShaker::MSG_LEN, USBShaker::TIMEOUT);
+     if (written != USBShaker::MSG_LEN)
      {
          std::cerr  << "Could not write data" << std::endl;
      }
 }
 
 
-void Shaker::stop()
+void USBShaker::stop()
 {
      int written;
 
-     written = libusb_control_transfer(device, LIBUSB_REQUEST_TYPE_CLASS, LIBUSB_REQUEST_SET_CONFIGURATION, LIBUSB_REQUEST_SET_FEATURE, 0, Shaker::OFF, Shaker::MSG_LEN, Shaker::TIMEOUT);
-     if (written != Shaker::MSG_LEN)
+     written = libusb_control_transfer(device, LIBUSB_REQUEST_TYPE_CLASS, LIBUSB_REQUEST_SET_CONFIGURATION, LIBUSB_REQUEST_SET_FEATURE, 0, USBShaker::OFF, USBShaker::MSG_LEN, USBShaker::TIMEOUT);
+     if (written != USBShaker::MSG_LEN)
      {
          std::cerr  << "Could not write data" << std::endl;
      }
@@ -54,7 +52,7 @@ void Shaker::stop()
 
 /** public **/
 
-Shaker::Shaker()
+USBShaker::USBShaker()
 {
     // initialize libusb
     int error = libusb_init(nullptr);
@@ -92,7 +90,12 @@ Shaker::Shaker()
     }
 }
 
-void Shaker::shakeFor(const Duration& shakeTime)
+bool USBShaker::isAccessable()
+{
+    return this->device != nullptr;
+}
+
+void USBShaker::shakeFor(const Duration& shakeTime)
 {   
     // shaker is running or ran
     if (this->thread.joinable())
@@ -113,14 +116,17 @@ void Shaker::shakeFor(const Duration& shakeTime)
     }
     // SHAKE IT BABY!
     this->end = Clock::now() + shakeTime;
-    this->thread = std::thread(&Shaker::shake, this);
+    this->thread = std::thread(&USBShaker::shake, this);
     this->mutex.unlock();
 }
 
-Shaker::~Shaker()
+USBShaker::~USBShaker()
 {
-    this->stop();
-    libusb_release_interface(this->device, 0);
-    libusb_close(this->device);
-    libusb_exit(NULL);
+    if (this->device)
+    {
+        this->stop();
+        libusb_release_interface(this->device, 0);
+        libusb_close(this->device);
+    }
+    libusb_exit(nullptr);
 }

@@ -1,6 +1,7 @@
 #include "flycounter.h"
 
 #include <QDir>
+#include <QTemporaryFile>
 
 #include <chrono>
 #include <ctime>
@@ -10,8 +11,10 @@
 #include <map>
 
 #include "dbscan/hpdbscan.h"
+#include "noshaker.h"
 #include "filecam.h"
 #include "reflexcam.h"
+#include "usbshaker.h"
 #include "webcamera.h"
 
 Colors FlyCounter::COLORS {
@@ -44,44 +47,33 @@ Colors FlyCounter::COLORS {
     Color(100, 170, 137)
 };
 
-FlyCounter::FlyCounter(QObject* parent,
-                       const Duration& leadTime,
-                       const Duration& roundTime,
-                       const Duration& shakeTime,
-                       int epsilon,
-                       int minPoints,
-                       int pixelsPerFly,
-                       int threshold,
-                       int vialSize,
-                       const std::string& outputPath,
-                       bool saveImages)
+FlyCounter::FlyCounter(QObject* parent)
   : QObject(parent),
 
-    // experiment data
-    leadTime(leadTime),
-    roundTime(roundTime),
-    shakeTime(shakeTime),
+    // experiment parameters
+    leadTime(Seconds(0)),
+    roundTime(Seconds(0)),
+    shakeTime(Seconds(0)),
 
     // analysis parameters
-    epsilon(epsilon),
-    minPoints(minPoints),
-    pixelsPerFly(pixelsPerFly),
-    threshold(threshold),
-    vialSize(vialSize),
+    epsilon(0),
+    minPoints(0),
+    pixelsPerFly(0),
+    threshold(0),
+    vialSize(0),
 
     // results
-    output(outputPath),
-    saveImages(saveImages),
+    output(QTemporaryFile().fileName().toStdString()),
+    saveImages(false),
+    // devices
+    camera(nullptr),
+    shaker(nullptr),
 
     // threaded execution
     running(false)
-{
-    /* setup initial images */
-    this->detectCamera();
-    this->updateImages();
 
-    /* create ouput directory */
-    QDir().mkdir(QString::fromStdString(this->output));
+{
+    this->detectDevices();
 }
 
 /* image analysis mainloop */
@@ -99,7 +91,7 @@ void FlyCounter::process()
         if (current > shake)
         {
             shake += this->roundTime;
-            this->shaker.shakeFor(this->shakeTime);
+            this->shaker->shakeFor(this->shakeTime);
         }
 
         // Time to take a picture?
@@ -140,7 +132,20 @@ void FlyCounter::detectCamera()
 
     // webcam is not available, fallback to "camera" reading from disk
     delete this->camera;
-    this->camera = new FileCam("new", 1);
+    // TODO: set useful path (static var? interface option?)
+    this->camera = new FileCam("./new", 1);
+}
+
+void FlyCounter::detectShaker()
+{
+    this->shaker = new USBShaker();
+    if (this->shaker->isAccessable())
+    {
+        return;
+    }
+
+    delete this->shaker;
+    this->shaker = new NoShaker();
 }
 
 /* converts a chrono timepoint to a string */
@@ -216,10 +221,10 @@ void FlyCounter::updateClusterImage()
         }
 
         /* draw colored flies on the image */
-        for (int i = 0; i < numLabels[index]; ++i)
+        for (int i = 0; i < numberOfPixels; ++i)
         {
-            Color color = labels[abs(this->labels[index][i])];
-            cv::Vec2f coord = this->coords[index].at<cv::Vec2f>(0,i);
+            Color color = COLORS[colorMap[std::abs(labels[i])]];
+            cv::Vec2f coord = flyPixels.at<cv::Vec2f>(0, i);
             // TODO: choose different color for cluster that are larger then pixelsPerFly - how?
             this->clusterImage.at<cv::Vec3b>(coord[1],coord[0]) = color;
         }
@@ -388,6 +393,16 @@ void FlyCounter::validatedSetShakeTime(const Duration& time)
     }
 }
 
+/* detects the external devices - camera and shaker */
+void FlyCounter::detectDevices()
+{
+    delete this->camera;
+    delete this->shaker;
+
+    this->detectCamera();
+    this->detectShaker();
+}
+
 /* start the fly counter */
 void FlyCounter::start()
 {
@@ -402,7 +417,10 @@ void FlyCounter::start()
 void FlyCounter::stop()
 {
     this->running = false;
-    this->thread.join();
+    if (this->thread.joinable())
+    {
+        this->thread.join();
+    }
 }
 
 /* execution */
@@ -432,10 +450,7 @@ void FlyCounter::updateImages()
 FlyCounter::~FlyCounter()
 {
     delete this->camera;
-    for (auto label : labels)
-    {
-        delete[] label;
-    }
+    delete this->shaker;
 }
 
 /** public slots **/
@@ -469,6 +484,7 @@ void FlyCounter::setVialSize(int value)
 /* result setters */
 void FlyCounter::setOutput(const std::string& out)
 {
+    QDir().mkpath(QString::fromStdString(out));
     this->output = out;
 }
 
