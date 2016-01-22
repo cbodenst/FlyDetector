@@ -45,6 +45,7 @@ private:
     Flies flies;
 
     /* results */
+    Timepoint   experimentStart;
     std::string output;
     bool        saveImages;
 
@@ -66,9 +67,8 @@ private:
     void updateThresholdImage();
     void updateClusterImage();
 
-    std::string toString(const Timepoint& time);
-    void        writeImage(const Timepoint& time);
-    void        writeResults(const Timepoint& time);
+    void writeImage(const Timepoint& time);
+    void writeResults(int elapsed);
 
 signals:
     /* GUI signals */

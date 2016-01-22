@@ -28,7 +28,8 @@ SOURCES += main.cpp\
     dbscan/space.cpp \
     vials.cpp \
     usbshaker.cpp \
-    noshaker.cpp
+    noshaker.cpp \
+    logger.cpp
 
 HEADERS  += mainwindow.h \
     cam.h \
@@ -46,7 +47,8 @@ HEADERS  += mainwindow.h \
     vials.h \
     usbshaker.h \
     shaker.h \
-    noshaker.h
+    noshaker.h \
+    logger.h
 
 FORMS    += mainwindow.ui
 

@@ -21,8 +21,3 @@ bool FileCam::getImage(cv::Mat &mat)
 
     return true;
 }
-
-bool FileCam::setFocus(int focus)
-{
-    return false;
-}

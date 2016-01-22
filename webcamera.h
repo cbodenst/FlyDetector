@@ -15,10 +15,7 @@ public:
     static const int DEFAULT_FOCUS =  110;
 
     WebCamera();
-
     virtual bool getImage(cv::Mat& mat);
-    virtual bool setFocus(int value);
-
     virtual ~WebCamera();
 };
 

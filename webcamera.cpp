@@ -34,11 +34,6 @@ bool WebCamera::getImage(cv::Mat& mat)
     return this->cam.read(mat);
 }
 
-bool WebCamera::setFocus(int value)
-{
-    return this->cam.set(CV_CAP_PROP_FOCUS, value);
-}
-
 WebCamera::~WebCamera()
 {
     this->cam.release();

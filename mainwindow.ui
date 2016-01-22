@@ -784,6 +784,18 @@ QLabel {
     </item>
     <item row="4" column="0" colspan="10">
      <widget class="QScrollArea" name="messageScrollArea">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>120</height>
+       </size>
+      </property>
       <property name="widgetResizable">
        <bool>true</bool>
       </property>
@@ -792,8 +804,8 @@ QLabel {
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>1191</width>
-         <height>75</height>
+         <width>1204</width>
+         <height>96</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_5">

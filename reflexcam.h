@@ -14,10 +14,7 @@ protected:
 
 public:
     ReflexCam();
-
     virtual bool getImage(cv::Mat& mat);
-    virtual bool setFocus(int focus);
-
     virtual ~ReflexCam();
 };
 

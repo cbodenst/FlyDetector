@@ -3,6 +3,8 @@
 #include <iostream>
 #include <mutex>
 
+#include "logger.h"
+
 unsigned char USBShaker::ON[]  = {0xFF, 0x01};
 unsigned char USBShaker::OFF[] = {0xFD, 0x01};
 
@@ -31,10 +33,11 @@ void USBShaker::start()
 {
      int written;
 
+     // TODO: what happens if device is deconnected mid-process?
      written = libusb_control_transfer(device, LIBUSB_REQUEST_TYPE_CLASS, LIBUSB_REQUEST_SET_CONFIGURATION, LIBUSB_REQUEST_SET_FEATURE, 0, USBShaker::ON, USBShaker::MSG_LEN, USBShaker::TIMEOUT);
      if (written != USBShaker::MSG_LEN)
      {
-         std::cerr  << "Could not write data" << std::endl;
+         Logger::error("Unable to send shaker start signal");
      }
 }
 
@@ -46,7 +49,7 @@ void USBShaker::stop()
      written = libusb_control_transfer(device, LIBUSB_REQUEST_TYPE_CLASS, LIBUSB_REQUEST_SET_CONFIGURATION, LIBUSB_REQUEST_SET_FEATURE, 0, USBShaker::OFF, USBShaker::MSG_LEN, USBShaker::TIMEOUT);
      if (written != USBShaker::MSG_LEN)
      {
-         std::cerr  << "Could not write data" << std::endl;
+         Logger::error("Unable to send shaker stop signal");
      }
 }
 
@@ -58,7 +61,7 @@ USBShaker::USBShaker()
     int error = libusb_init(nullptr);
     if (error != 0)
     {
-        std::cerr  << "Could not initialize lib" << std::endl;
+        Logger::error("Could not initialize LibUSB");
         return;
     }
 
@@ -66,7 +69,6 @@ USBShaker::USBShaker()
     this->device = libusb_open_device_with_vid_pid(nullptr, VID, PID);
     if (this->device == nullptr)
     {
-        std::cerr  << "Could not find device" << std::endl;
         return;
     }
 
@@ -76,7 +78,7 @@ USBShaker::USBShaker()
         error = libusb_detach_kernel_driver(this->device, 0);
         if (error != 0)
         {
-            std::cerr  << "Could not detach kernal driver" << std::endl;
+            Logger::error("Unable to detach USB relay kernel driver");
             return;
         }
     }
@@ -85,7 +87,7 @@ USBShaker::USBShaker()
     error = libusb_claim_interface(this->device, 0);
     if (error != 0)
     {
-        std::cerr  << "Could not claim interface" << std::endl;
+        Logger::error("Could not claim USB relay interface");
         return;
     }
 }

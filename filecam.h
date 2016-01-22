@@ -16,9 +16,7 @@ class FileCam : public Cam
 
 public:
     FileCam(const std::string& folder, int frames);
-
     virtual bool getImage(cv::Mat& mat);
-    virtual bool setFocus(int focus);
 };
 
 #endif // FILECAM_H

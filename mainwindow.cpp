@@ -6,12 +6,13 @@
 
 #include <opencv2/opencv.hpp>
 
+#include "logger.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "vials.h"
 
 /* settings path */
-const QString MainWindow::DEFAULT_PATH   = "./default_settings";
+const QString MainWindow::DEFAULT_PATH   = "./settings";
 
 /* settings file keys */
 const QString MainWindow::MODE           = "mode";
@@ -33,9 +34,13 @@ MainWindow::MainWindow(QWidget* parent) :
     flyCounter(this)
 {
     this->setupUI();
+    Logger::info("Booting...");
     this->setupSignals();
     this->setupSettings();
+
+    this->flyCounter.detectDevices();
     this->flyCounter.updateImages();
+    Logger::info("...ready!");
 
     /* XXX: workaround for image resize bug */
     QTimer::singleShot(0, this, SLOT(onLoadResize()));
@@ -61,6 +66,7 @@ void MainWindow::setupUI()
     this->scene = new QGraphicsScene(this->ui->image);
     this->ui->image->setScene(this->scene);
     this->showMaximized();
+    Logger::setOutput(this->ui->messages);
 }
 
 /* registers the QT interface signals */
@@ -77,10 +83,12 @@ void MainWindow::setupSettings()
     QFileInfo fileInfo(DEFAULT_PATH);
     if (fileInfo.exists() && fileInfo.isFile())
     {
+        Logger::info("Loading settings");
         this->loadSettings(DEFAULT_PATH);
     }
     else
     {
+        Logger::info("No settings found, using default values instead");
         this->saveSettings(DEFAULT_PATH);
         this->loadSettings(DEFAULT_PATH); // triggers the fly counter setters
     }
@@ -232,7 +240,7 @@ QPixmap MainWindow::toPixmap(const cv::Mat &image)
 
 void MainWindow::on_detectDevices_clicked()
 {
-    // TODO: implement me
+    this->flyCounter.detectDevices();
 }
 
 /* image settings */
@@ -313,11 +321,13 @@ void MainWindow::on_vialSize_valueChanged(int vialSize)
 /* result settings */
 void MainWindow::on_outputPathBrowser_clicked()
 {
-    this->on_outputPath_textChanged(QFileDialog::getExistingDirectory(this, "Output path", "/home"));
+    this->ui->outputPath->setText(QFileDialog::getExistingDirectory(this, "Output path", "/home"));
 }
 
 void MainWindow::on_outputPath_textChanged(const QString& path)
 {
+    // TODO: set meaningful initial output path - e.g. home directory, needs to be dynamic in mainwindow constructor
+    if (path.isEmpty()) return;
     this->flyCounter.setOutput(path.toStdString());
 }
 

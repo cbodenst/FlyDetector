@@ -4,16 +4,15 @@
 #include <QTemporaryFile>
 
 #include <chrono>
-#include <ctime>
 #include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <map>
 
 #include "dbscan/hpdbscan.h"
-#include "noshaker.h"
 #include "filecam.h"
+#include "logger.h"
 #include "reflexcam.h"
+#include "noshaker.h"
 #include "usbshaker.h"
 #include "webcamera.h"
 
@@ -72,20 +71,19 @@ FlyCounter::FlyCounter(QObject* parent)
     // threaded execution
     running(false)
 
-{
-    this->detectDevices();
-}
+{}
 
 /* image analysis mainloop */
 void FlyCounter::process()
 {
-    Timepoint start   = Clock::now();
-    Timepoint measure = start + this->roundTime;
-    Timepoint shake   = measure - this->leadTime;
+    this->experimentStart = Clock::now();
+    Timepoint measure     = this->experimentStart + this->roundTime;
+    Timepoint shake       = measure - this->leadTime;
 
     while (this->running)
     {
         Timepoint current = Clock::now();
+        int elapsed = convertToInt(current - this->experimentStart);
 
         // Time to shake?
         if (current > shake)
@@ -99,15 +97,13 @@ void FlyCounter::process()
         {
             measure += this->roundTime;
             this->updateImages();
-            this->writeResults(current);
-
+            this->writeResults(elapsed);
             if (this->saveImages)
             {
                 this->writeImage(current);
             }
         }
 
-        int elapsed = convertToInt(current - start);
         emit timeUpdate(QString::number(elapsed) + "s");
     }
 }
@@ -119,21 +115,27 @@ void FlyCounter::detectCamera()
     this->camera = new ReflexCam();
     if (this->camera->isAccessable())
     {
+        Logger::info("Detected reflex camera");
         return;
     }
 
     // reflex camera not available, try built-in webcam
     delete this->camera;
+    Logger::warn("Could not find reflex camera");
+
     this->camera = new WebCamera();
     if (this->camera->isAccessable())
     {
+        Logger::info("Detected web camera");
         return;
     }
 
     // webcam is not available, fallback to "camera" reading from disk
     delete this->camera;
+    Logger::warn("Could not find web camera");
     // TODO: set useful path (static var? interface option?)
     this->camera = new FileCam("./new", 1);
+    Logger::info("Falling back to reading files from disk");
 }
 
 void FlyCounter::detectShaker()
@@ -141,21 +143,14 @@ void FlyCounter::detectShaker()
     this->shaker = new USBShaker();
     if (this->shaker->isAccessable())
     {
+        Logger::info("Detected USB shaker");
         return;
     }
 
     delete this->shaker;
+    Logger::warn("Could not find USB shaker");
     this->shaker = new NoShaker();
-}
-
-/* converts a chrono timepoint to a string */
-std::string FlyCounter::toString(const Timepoint& time)
-{
-    auto a_time_t = Clock::to_time_t(time);
-    std::stringstream ss;
-    ss << std::put_time(std::localtime(&a_time_t), "%Y-%m-%d %H:%M:%S");
-
-    return ss.str();
+    Logger::info("Unable to shake");
 }
 
 /* fetches new image from the camera */
@@ -223,6 +218,7 @@ void FlyCounter::updateClusterImage()
         /* draw colored flies on the image */
         for (int i = 0; i < numberOfPixels; ++i)
         {
+            // TODO: wrap around with colors
             Color color = COLORS[colorMap[std::abs(labels[i])]];
             cv::Vec2f coord = flyPixels.at<cv::Vec2f>(0, i);
             // TODO: choose different color for cluster that are larger then pixelsPerFly - how?
@@ -242,8 +238,9 @@ void FlyCounter::updateThresholdImage()
 /* stores the fly image */
 void FlyCounter::writeImage(const Timepoint& time)
 {
+    // TODO: put everything into a timestamped subfolder, name images by elapsed seconds
     std::stringstream path;
-    path << this->output << "/" << this->toString(time) << ".jpg";
+    path << this->output << "/" << timeToString(time) << ".jpg";
     // TODO: debug
     this->imageLock.lock();
     cv::imwrite(path.str(), this->cameraImage);
@@ -251,11 +248,11 @@ void FlyCounter::writeImage(const Timepoint& time)
 }
 
 /* output the fly counts in a tab-separated list into a file, leading value is the collection timestamp */
-void FlyCounter::writeResults(const Timepoint& time)
+void FlyCounter::writeResults(int elapsed)
 {
-    std::ofstream file(this->output + "/" + this->output, std::ios::app);
+    std::ofstream file(this->output + "/" + timeToString(this->experimentStart) + ".csv", std::ios::app);
     // TODO: debug
-    file << this->toString(time) ;
+    file << elapsed;
     for (int count : this->flies)
     {
         file << "\t" << count;
