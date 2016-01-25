@@ -1,6 +1,7 @@
 #include "flycounter.h"
 
 #include <QDir>
+#include <QStandardPaths>
 #include <QTemporaryFile>
 
 #include <chrono>
@@ -133,10 +134,8 @@ void FlyCounter::detectCamera()
     // webcam is not available, fallback to "camera" reading from disk
     delete this->camera;
     Logger::warn("Could not find web camera");
-    // TODO: set useful path (static var? interface option?)
-    // TODO: make this a user interface option
 
-    this->camera = new FileCam("./new", 1);
+    this->camera = new FileCam(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation).toStdString() + "/debug");
     Logger::info("Falling back to reading files from disk");
 }
 
@@ -160,7 +159,8 @@ void FlyCounter::updateCameraImage()
 {
     if (!this->camera->getImage(this->cameraImage))
     {
-        // TODO: debug
+        this->cameraImage = cv::Mat(); // create an empty matrix
+        Logger::error("Could not obtain camera image");
         return;
     }
     cv::cvtColor(this->cameraImage, this->cameraImage, CV_BGR2RGB);
@@ -169,6 +169,12 @@ void FlyCounter::updateCameraImage()
 
 void FlyCounter::updateClusterImage()
 {
+    if (this->cameraImage.empty())
+    {
+        this->clusterImage = cv::Mat();
+        return;
+    }
+
     int index = 0;
     std::map<int, int> clusterSizes;
     std::map<int, int> colorMap;
@@ -222,7 +228,6 @@ void FlyCounter::updateClusterImage()
         {
             Color color = COLORS[colorMap[std::abs(labels[i])] % COLORS.size()];
             cv::Vec2f coord = flyPixels.at<cv::Vec2f>(0, i);
-            // TODO: choose different color for cluster that are larger then pixelsPerFly - how?
             this->clusterImage.at<cv::Vec3b>(coord[1],coord[0]) = color;
         }
     }
@@ -231,6 +236,11 @@ void FlyCounter::updateClusterImage()
 /* update the threshold image from the currently set camera image */
 void FlyCounter::updateThresholdImage()
 {
+    if (this->cameraImage.empty())
+    {
+        this->thresholdImage = cv::Mat();
+        return;
+    }
     cv::Mat greyscaleImage;
     cv::cvtColor(this->cameraImage, greyscaleImage, CV_RGB2GRAY);
     cv::threshold(greyscaleImage, this->thresholdImage, this->threshold, 255, CV_THRESH_BINARY_INV);

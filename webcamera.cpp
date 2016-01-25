@@ -1,7 +1,7 @@
 #include "webcamera.h"
 
 WebCamera::WebCamera()
-    : cam(0)
+  : cam(0)
 {
     try
     {
@@ -15,7 +15,6 @@ WebCamera::WebCamera()
             // setup the camera properties (image dimensions and camera focus)
             this->cam.set(CV_CAP_PROP_FRAME_WIDTH,  WebCamera::IMAGE_WIDTH);
             this->cam.set(CV_CAP_PROP_FRAME_HEIGHT, WebCamera::IMAGE_HEIGHT);
-            this->cam.set(CV_CAP_PROP_FOCUS,        WebCamera::DEFAULT_FOCUS);
         }
         else
         {

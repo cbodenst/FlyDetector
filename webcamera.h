@@ -12,7 +12,6 @@ class WebCamera : public Cam
 public:
     static const int IMAGE_WIDTH   = 1080;
     static const int IMAGE_HEIGHT  =  720;
-    static const int DEFAULT_FOCUS =  110;
 
     WebCamera();
     virtual bool getImage(cv::Mat& mat);

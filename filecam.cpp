@@ -1,23 +1,29 @@
 #include <sstream>
 
+#include <QDir>
+#include <QString>
+
 #include "filecam.h"
 
-FileCam::FileCam(const std::string& folder, int frames)
-    : Cam(true), currentFrame(0), totalFrames(frames), path(folder)
-{}
-
-bool FileCam::getImage(cv::Mat &mat)
+FileCam::FileCam(const std::string& folder)
+  : Cam(true), path(folder)
 {
-    std::stringstream output;
-    output << this->path << "/" <<  this->currentFrame << ".jpg";
-    mat = cv::imread(output.str());
-    if (mat.empty())
+    QStringList filters;
+    filters << "*.jpg" << "*.jpeg";
+
+    this->images = QDir(QString::fromStdString(folder)).entryList(filters, QDir::NoFilter, QDir::Time | QDir::Reversed);
+}
+
+bool FileCam::getImage(cv::Mat& image)
+{
+    if (this->images.isEmpty())
     {
+        image = cv::Mat();
         return false;
     }
 
-    ++this->currentFrame;
-    this->currentFrame %= this->totalFrames;
-
+    std::stringstream imagePath;
+    imagePath << this->path << "/" << this->images.takeFirst().toStdString();
+    image = cv::imread(imagePath.str());
     return true;
 }

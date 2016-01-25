@@ -1,22 +1,23 @@
 #ifndef FILECAM_H
 #define FILECAM_H
 
-#include <opencv2/opencv.hpp>
 #include <string>
+
+#include <QStringList>
+#include <opencv2/opencv.hpp>
 
 #include "cam.h"
 
 /* "Special camera" that reads images from disk */
 class FileCam : public Cam
 {
-    int currentFrame;
-    int totalFrames;
-
-    std::string path;
+private:
+    const std::string path;
+    QStringList       images;
 
 public:
-    FileCam(const std::string& folder, int frames);
-    virtual bool getImage(cv::Mat& mat);
+    FileCam(const std::string& folder);
+    virtual bool getImage(cv::Mat& image);
 };
 
 #endif // FILECAM_H

@@ -66,7 +66,7 @@ void MainWindow::setupUI()
     this->ui->setupUi(this);
     this->scene = new QGraphicsScene(this->ui->image);
     this->ui->image->setScene(this->scene);
-    this->ui->outputPath->setText(QStandardPaths::displayName(QStandardPaths::DocumentsLocation));
+    this->ui->outputPath->setText(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation));
     this->showMaximized();
     Logger::setOutput(this->ui->messages);
 }
@@ -323,7 +323,7 @@ void MainWindow::on_vialSize_valueChanged(int vialSize)
 /* result settings */
 void MainWindow::on_outputPathBrowser_clicked()
 {
-    QString path = QFileDialog::getExistingDirectory(this, "Output path", QStandardPaths::displayName(QStandardPaths::DocumentsLocation));
+    QString path = QFileDialog::getExistingDirectory(this, "Output path", QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation));
     if (path.isEmpty()) return;
     this->ui->outputPath->setText(path);
 }
