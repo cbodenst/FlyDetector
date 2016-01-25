@@ -100,7 +100,7 @@ void FlyCounter::process()
             this->writeResults(elapsed);
             if (this->saveImages)
             {
-                this->writeImage(current);
+                this->writeImage(elapsed);
             }
         }
 
@@ -134,6 +134,8 @@ void FlyCounter::detectCamera()
     delete this->camera;
     Logger::warn("Could not find web camera");
     // TODO: set useful path (static var? interface option?)
+    // TODO: make this a user interface option
+
     this->camera = new FileCam("./new", 1);
     Logger::info("Falling back to reading files from disk");
 }
@@ -218,8 +220,7 @@ void FlyCounter::updateClusterImage()
         /* draw colored flies on the image */
         for (int i = 0; i < numberOfPixels; ++i)
         {
-            // TODO: wrap around with colors
-            Color color = COLORS[colorMap[std::abs(labels[i])]];
+            Color color = COLORS[colorMap[std::abs(labels[i])] % COLORS.size()];
             cv::Vec2f coord = flyPixels.at<cv::Vec2f>(0, i);
             // TODO: choose different color for cluster that are larger then pixelsPerFly - how?
             this->clusterImage.at<cv::Vec3b>(coord[1],coord[0]) = color;
@@ -235,23 +236,43 @@ void FlyCounter::updateThresholdImage()
     cv::threshold(greyscaleImage, this->thresholdImage, this->threshold, 255, CV_THRESH_BINARY_INV);
 }
 
-/* stores the fly image */
-void FlyCounter::writeImage(const Timepoint& time)
+/* create the directory for all the output data - always called before write */
+std::string FlyCounter::makeExperimentDirectory()
 {
-    // TODO: put everything into a timestamped subfolder, name images by elapsed seconds
+    std::stringstream pathSS;
+    pathSS << this->output << "/" << timeToString(this->experimentStart);
+
+    std::string path = pathSS.str();
+    QDir().mkpath(QString::fromStdString(path));
+
+    return path;
+}
+
+/* stores the fly image */
+void FlyCounter::writeImage(int elapsed)
+{
     std::stringstream path;
-    path << this->output << "/" << timeToString(time) << ".jpg";
-    // TODO: debug
+    path << this->makeExperimentDirectory() << "/" << elapsed << ".jpg";
+
     this->imageLock.lock();
-    cv::imwrite(path.str(), this->cameraImage);
+    if (!cv::imwrite(path.str(), this->cameraImage))
+    {
+        Logger::error("Could not save image");
+    }
     this->imageLock.unlock();
 }
 
 /* output the fly counts in a tab-separated list into a file, leading value is the collection timestamp */
 void FlyCounter::writeResults(int elapsed)
 {
-    std::ofstream file(this->output + "/" + timeToString(this->experimentStart) + ".csv", std::ios::app);
-    // TODO: debug
+    std::string path = this->makeExperimentDirectory();
+    std::ofstream file(path + "/results.csv", std::ios::app);
+    if (!file.good())
+    {
+        Logger::error("Could not write results.csv file");
+        return;
+    }
+
     file << elapsed;
     for (int count : this->flies)
     {
@@ -481,7 +502,6 @@ void FlyCounter::setVialSize(int value)
 /* result setters */
 void FlyCounter::setOutput(const std::string& out)
 {
-    QDir().mkpath(QString::fromStdString(out));
     this->output = out;
 }
 

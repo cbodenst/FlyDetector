@@ -67,7 +67,8 @@ private:
     void updateThresholdImage();
     void updateClusterImage();
 
-    void writeImage(const Timepoint& time);
+    std::string makeExperimentDirectory();
+    void writeImage(int elapsed);
     void writeResults(int elapsed);
 
 signals:

@@ -2,6 +2,7 @@
 #include <QFileInfo>
 #include <QGraphicsPixmapItem>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QTimer>
 
 #include <opencv2/opencv.hpp>
@@ -65,6 +66,7 @@ void MainWindow::setupUI()
     this->ui->setupUi(this);
     this->scene = new QGraphicsScene(this->ui->image);
     this->ui->image->setScene(this->scene);
+    this->ui->outputPath->setText(QStandardPaths::displayName(QStandardPaths::DocumentsLocation));
     this->showMaximized();
     Logger::setOutput(this->ui->messages);
 }
@@ -260,7 +262,7 @@ void MainWindow::on_mode_currentIndexChanged(int mode)
         this->showClusterImage();
         break;
     default:
-        // TODO: debug
+        Logger::error("Unknown view mode");
         break;
     }
 }
@@ -321,12 +323,13 @@ void MainWindow::on_vialSize_valueChanged(int vialSize)
 /* result settings */
 void MainWindow::on_outputPathBrowser_clicked()
 {
-    this->ui->outputPath->setText(QFileDialog::getExistingDirectory(this, "Output path", "/home"));
+    QString path = QFileDialog::getExistingDirectory(this, "Output path", QStandardPaths::displayName(QStandardPaths::DocumentsLocation));
+    if (path.isEmpty()) return;
+    this->ui->outputPath->setText(path);
 }
 
 void MainWindow::on_outputPath_textChanged(const QString& path)
 {
-    // TODO: set meaningful initial output path - e.g. home directory, needs to be dynamic in mainwindow constructor
     if (path.isEmpty()) return;
     this->flyCounter.setOutput(path.toStdString());
 }
