@@ -194,16 +194,17 @@ void MainWindow::loadSettings(const QString& path)
 {
     QSettings settings(path, QSettings::NativeFormat);
 
-    this->ui->leadTime->setValue(settings.value(MainWindow::LEAD_TIME).toInt());
-    this->on_leadTime_valueChanged(settings.value(MainWindow::LEAD_TIME).toInt());
+    // round time needs to go first
     this->ui->roundTime->setValue(settings.value(MainWindow::ROUND_TIME).toInt());
     this->on_roundTime_valueChanged(settings.value(MainWindow::ROUND_TIME).toInt());
+    this->ui->leadTime->setValue(settings.value(MainWindow::LEAD_TIME).toInt());
+    this->on_leadTime_valueChanged(settings.value(MainWindow::LEAD_TIME).toInt());
     this->ui->shakeTime->setValue(settings.value(MainWindow::SHAKE_TIME).toInt());
     this->on_shakeTime_valueChanged(settings.value(MainWindow::SHAKE_TIME).toInt());
     this->ui->epsilon->setValue(settings.value(MainWindow::EPSILON).toInt());
     this->on_epsilon_valueChanged(settings.value(MainWindow::EPSILON).toInt());
     this->ui->minPoints->setValue(settings.value(MainWindow::MIN_POINTS).toInt());
-    this->on_minPoints_valueChanged(settings.value(MainWindow::MIN_POINTS));
+    this->on_minPoints_valueChanged(settings.value(MainWindow::MIN_POINTS).toInt());
     this->ui->pixelsPerFly->setValue(settings.value(MainWindow::PIXELS_PER_FLY).toInt());
     this->on_pixelsPerFly_valueChanged(settings.value(MainWindow::PIXELS_PER_FLY).toInt());
     this->ui->threshold->setValue(settings.value(MainWindow::THRESHOLD).toInt());
@@ -239,8 +240,8 @@ void MainWindow::saveSettings(const QString& path)
 
     settings.setValue(MainWindow::MODE,           this->ui->mode->currentIndex());
     settings.setValue(MainWindow::DISPLAY_VIALS,  this->ui->displayVials->isChecked());
-    settings.setValue(MainWindow::LEAD_TIME,      this->ui->leadTime->value());
     settings.setValue(MainWindow::ROUND_TIME,     this->ui->roundTime->value());
+    settings.setValue(MainWindow::LEAD_TIME,      this->ui->leadTime->value());
     settings.setValue(MainWindow::SHAKE_TIME,     this->ui->shakeTime->value());
     settings.setValue(MainWindow::EPSILON,        this->ui->epsilon->value());
     settings.setValue(MainWindow::MIN_POINTS,     this->ui->minPoints->value());
