@@ -85,6 +85,7 @@ public:
 public slots:
     /* image settings */
     void on_detectDevices_clicked();
+    void on_displayVials_stateChanged();
     void on_mode_currentIndexChanged(int index);
     void on_refresh_clicked();
 

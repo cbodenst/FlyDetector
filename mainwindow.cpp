@@ -65,9 +65,13 @@ void MainWindow::setupUI()
 {
     this->ui->setupUi(this);
     this->scene = new QGraphicsScene(this->ui->image);
+
     this->ui->image->setScene(this->scene);
     this->ui->outputPath->setText(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation));
+    this->ui->vialSize->setMinimum(VIAL_TOLERANCE + 1);
+
     this->showMaximized();
+
     Logger::setOutput(this->ui->messages);
 }
 
@@ -190,20 +194,43 @@ void MainWindow::loadSettings(const QString& path)
 {
     QSettings settings(path, QSettings::NativeFormat);
 
-    this->ui->saveImages->toggled(settings.value(MainWindow::SAVE_IMAGES).toBool());
-    this->ui->leadTime->valueChanged(settings.value(MainWindow::LEAD_TIME).toInt());
-    this->ui->roundTime->valueChanged(settings.value(MainWindow::ROUND_TIME).toInt());
-    this->ui->shakeTime->valueChanged(settings.value(MainWindow::SHAKE_TIME).toInt());
-    this->ui->epsilon->valueChanged(settings.value(MainWindow::EPSILON).toInt());
-    this->ui->minPoints->valueChanged(settings.value(MainWindow::MIN_POINTS).toInt());
-    this->ui->pixelsPerFly->valueChanged(settings.value(MainWindow::PIXELS_PER_FLY).toInt());
-    this->ui->threshold->valueChanged(settings.value(MainWindow::THRESHOLD).toInt());
-    this->ui->vialSize->valueChanged(settings.value(MainWindow::VIAL_SIZE).toInt());
-    this->ui->outputPath->textChanged(settings.value(MainWindow::OUTPUT_PATH).toString());
-    this->ui->saveImages->toggled(settings.value(MainWindow::SAVE_IMAGES).toBool());
-    // needs to go last as it triggers the image update
-    this->ui->mode->setCurrentIndex(settings.value(MainWindow::MODE).toInt());
+    this->ui->leadTime->setValue(settings.value(MainWindow::LEAD_TIME).toInt());
+    this->on_leadTime_valueChanged(settings.value(MainWindow::LEAD_TIME).toInt());
+    this->ui->roundTime->setValue(settings.value(MainWindow::ROUND_TIME).toInt());
+    this->on_roundTime_valueChanged(settings.value(MainWindow::ROUND_TIME).toInt());
+    this->ui->shakeTime->setValue(settings.value(MainWindow::SHAKE_TIME).toInt());
+    this->on_shakeTime_valueChanged(settings.value(MainWindow::SHAKE_TIME).toInt());
+    this->ui->epsilon->setValue(settings.value(MainWindow::EPSILON).toInt());
+    this->on_epsilon_valueChanged(settings.value(MainWindow::EPSILON).toInt());
+    this->ui->minPoints->setValue(settings.value(MainWindow::MIN_POINTS).toInt());
+    this->on_minPoints_valueChanged(settings.value(MainWindow::MIN_POINTS));
+    this->ui->pixelsPerFly->setValue(settings.value(MainWindow::PIXELS_PER_FLY).toInt());
+    this->on_pixelsPerFly_valueChanged(settings.value(MainWindow::PIXELS_PER_FLY).toInt());
+    this->ui->threshold->setValue(settings.value(MainWindow::THRESHOLD).toInt());
+    this->on_threshold_valueChanged(settings.value(MainWindow::THRESHOLD).toInt());
+    this->ui->vialSize->setValue(settings.value(MainWindow::VIAL_SIZE).toInt());
+    this->on_vialSize_valueChanged(settings.value(MainWindow::VIAL_SIZE).toInt());
+    this->ui->outputPath->setText(settings.value(MainWindow::OUTPUT_PATH).toString());
+    this->on_outputPath_textChanged(settings.value(MainWindow::OUTPUT_PATH).toString());
+    this->ui->saveImages->setChecked(settings.value(MainWindow::SAVE_IMAGES).toBool());
+    this->on_saveImages_toggled(settings.value(MainWindow::SAVE_IMAGES).toBool());
 
+    // disable display vials signal so that we do not render the image twice
+    bool signalState = this->ui->displayVials->blockSignals(true);
+    this->ui->displayVials->setChecked(settings.value(MainWindow::DISPLAY_VIALS).toBool());
+    this->ui->displayVials->blockSignals(signalState);
+
+    // on_mode_currentIndexChanges does not fire if the current set state is the same as the passed - force it
+    int settingsMode = settings.value(MainWindow::MODE).toInt();
+    if (settingsMode == this->ui->mode->currentIndex())
+    {
+        this->on_mode_currentIndexChanged(settingsMode);
+    }
+    else
+    {
+        // state is the same - also change it in the interface
+        this->ui->mode->setCurrentIndex(settingsMode);
+    }
 }
 
 void MainWindow::saveSettings(const QString& path)
@@ -243,6 +270,11 @@ QPixmap MainWindow::toPixmap(const cv::Mat &image)
 void MainWindow::on_detectDevices_clicked()
 {
     this->flyCounter.detectDevices();
+}
+
+void MainWindow::on_displayVials_stateChanged()
+{
+    this->on_mode_currentIndexChanged(this->getViewMode());
 }
 
 /* image settings */
