@@ -185,7 +185,7 @@ void FlyCounter::updateClusterImage()
         cv::Mat flies;
         cv::Mat flyPixels;
         int     colorIndex = 0;
-        cv::Mat mask = this->clusterImage.clone();
+        cv::Mat mask =  cv::Mat(this->thresholdImage.size(), this->thresholdImage.type(), cv::Scalar(0));
 
         /* mask the veils */
         cv::circle(mask, cv::Point(vial[0],vial[1]), vial[2], cv::Scalar(255, 255, 255), -1 /* filled */);
