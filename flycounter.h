@@ -63,10 +63,6 @@ private:
     void detectShaker();
     void process();
 
-    void updateCameraImage();
-    void updateThresholdImage();
-    void updateClusterImage();
-
     std::string makeExperimentDirectory();
     void writeImage(int elapsed);
     void writeResults(int elapsed);
@@ -101,26 +97,28 @@ public:
     bool isRunning();
     const Vials& getVials();
 
+    /* results */
+    const Flies& getFlies();
+    const std::string& getOutput();
+
+    /* image updates */
+    void updateImages();
+    void updateCameraImage();
+    void updateThresholdImage();
+    void updateClusterImage();
+    void updateVials();
+
     /* validated setters */
     void validatedSetLeadTime(const Duration& time);
     void validatedSetRoundTime(const Duration& time);
     void validatedSetShakeTime(const Duration& time);
 
-    /* results */
-    const Flies& getFlies();
-    const std::string& getOutput();
-
     /* execution */
     void lock();
     void unlock();
-
     void detectDevices();
-
     void start();
     void stop();
-
-    /* image processing */
-    void updateImages();
 
     /* destructor */
     ~FlyCounter();

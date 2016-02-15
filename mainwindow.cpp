@@ -331,26 +331,37 @@ void MainWindow::on_shakeTime_valueChanged(int time)
 void MainWindow::on_epsilon_valueChanged(int epsilon)
 {
     this->flyCounter.setEpsilon(epsilon);
+    this->flyCounter.updateClusterImage();
+    this->updateImage();
 }
 
 void MainWindow::on_minPoints_valueChanged(int minPoints)
 {
     this->flyCounter.setMinPoints(minPoints);
+    this->flyCounter.updateClusterImage();
+    this->updateImage();
 }
 
 void MainWindow::on_pixelsPerFly_valueChanged(int pixelsPerFly)
 {
     this->flyCounter.setPixelsPerFly(pixelsPerFly);
+    this->flyCounter.updateClusterImage();
+    this->updateImage();
 }
 
 void MainWindow::on_threshold_valueChanged(int threshold)
 {
     this->flyCounter.setThreshold(threshold);
+    this->flyCounter.updateThresholdImage();
+    this->updateImage();
 }
 
 void MainWindow::on_vialSize_valueChanged(int vialSize)
 {
     this->flyCounter.setVialSize(vialSize);
+    this->flyCounter.updateVials();
+    this->flyCounter.updateClusterImage();
+    this->updateImage();
 }
 
 /* result settings */
