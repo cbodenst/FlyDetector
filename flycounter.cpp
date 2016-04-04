@@ -187,8 +187,8 @@ void FlyCounter::updateClusterImage()
         int     colorIndex = 0;
         cv::Mat mask =  cv::Mat(this->thresholdImage.size(), this->thresholdImage.type(), cv::Scalar(0));
 
-        /* mask the veils */
-        cv::circle(mask, cv::Point(vial[0],vial[1]), vial[2], cv::Scalar(255, 255, 255), -1 /* filled */);
+        /* mask the vails */
+        cv::drawContours(mask, std::vector<std::vector<cv::Point>>(1,vial.pts), 0, cv::Scalar(255, 255, 255), -1);
         cv::bitwise_and(mask, this->thresholdImage, flies);
 
         /* get their pixel coordinates in an array */
@@ -226,10 +226,12 @@ void FlyCounter::updateClusterImage()
         /* draw colored flies on the image */
         for (int i = 0; i < numberOfPixels; ++i)
         {
+            if (std::abs(labels[i]) == 0) continue;
             Color color = COLORS[colorMap[std::abs(labels[i])] % COLORS.size()];
             cv::Vec2f coord = flyPixels.at<cv::Vec2f>(0, i);
             this->clusterImage.at<cv::Vec3b>(coord[1],coord[0]) = color;
         }
+        index++;
     }
 }
 

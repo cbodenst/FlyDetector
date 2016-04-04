@@ -2,10 +2,38 @@
 #define VIALS_H
 
 #include <vector>
+#include <math.h>
 
 #include <opencv2/opencv.hpp>
 
-typedef cv::Vec3f         Vial;
+struct Vial
+{
+    std::vector<cv::Point> pts;
+    cv::Point center;
+    int area;
+    int radius;
+
+    Vial(const std::vector<cv::Point>& points)
+        :
+        pts(points),
+        center(cv::Point(0,0)),
+        area(M_PI),
+        radius(1)
+    {
+        this->pts = points;
+
+        for(cv::Point point : points)
+            center += point;
+        center.x /= points.size();
+        center.y /= points.size();
+
+        area = cv::contourArea(pts);
+
+        radius = sqrt(area/M_PI);
+    }
+};
+
+
 typedef std::vector<Vial> Vials;
 
 static const int VIAL_TOLERANCE = 20; //px
