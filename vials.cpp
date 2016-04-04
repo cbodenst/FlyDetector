@@ -37,7 +37,7 @@ cv::Mat drawVials(const Vials& vials, const cv::Mat& image)
         cv::Size fontSize = cv::getTextSize(vialNumber.str(), FONT, FONT_SCALE, FONT_STROKE, &baseline);
 
         std::stringstream flies;
-        flies <<  vial.flieCount;
+        flies <<  vial.flyCount;
 
         cv::drawContours(vialImage, std::vector<std::vector<cv::Point>>(1,vial.pts), 0, VIAL_COLOR, VIAL_STROKE);
         cv::Point center = vial.center;
@@ -57,7 +57,7 @@ Vials findVials(const cv::Mat& image, int vialSize)
     Vials vials;
     cv::Mat hsv;
     cv::cvtColor(image, hsv, CV_BGR2HSV);
-    cv::inRange(hsv, cv::Scalar(32,100,0), cv::Scalar(100,255,255), hsv);
+    cv::inRange(hsv, cv::Scalar(32,100,0), cv::Scalar(100,255,100), hsv);
 
     // Pad image
     cv::Mat padded;

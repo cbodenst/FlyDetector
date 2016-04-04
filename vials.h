@@ -12,7 +12,7 @@ struct Vial
     cv::Point center;
     int area;
     int radius;
-    int flieCount;
+    int flyCount;
 
     Vial(const std::vector<cv::Point>& points)
         :
@@ -20,7 +20,7 @@ struct Vial
         center(cv::Point(0,0)),
         area(M_PI),
         radius(1),
-        flieCount(0)
+        flyCount(0)
     {
         // Compute mean and radius
         for(cv::Point point : points)

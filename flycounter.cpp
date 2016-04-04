@@ -195,7 +195,7 @@ void FlyCounter::writeResults(int elapsed)
     file << elapsed;
     for (Vial vial : this->vials)
     {
-        file << "\t" << vial.flieCount;
+        file << "\t" << vial.flyCount;
     }
     file << std::endl;
     file.close();
@@ -345,10 +345,11 @@ void FlyCounter::updateClusterImage()
             ++clusterSizes[std::abs(labels[i])];
         }
         /* count the flies based on the clusters and color them in the cluster image */
+        vial.flyCount = 0;
         for (auto size : clusterSizes)
         {
             if (size.first == 0) continue;
-            vial.flieCount += (int)std::ceil((float)size.second / (float)this->pixelsPerFly);
+            vial.flyCount += (int)std::ceil((float)size.second / (float)this->pixelsPerFly);
 
             if (colorMap.find(size.first) == colorMap.end())
             {
@@ -356,7 +357,7 @@ void FlyCounter::updateClusterImage()
                 ++colorIndex;
             }
         }
-        this->fliesTotal += vial.flieCount;
+        this->fliesTotal += vial.flyCount;
 
         /* draw colored flies on the image */
         for (int i = 0; i < numberOfPixels; ++i)

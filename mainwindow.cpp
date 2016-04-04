@@ -352,6 +352,7 @@ void MainWindow::on_threshold_valueChanged(int threshold)
 {
     this->flyCounter.setThreshold(threshold);
     this->flyCounter.updateThresholdImage();
+    this->flyCounter.updateClusterImage();
     this->updateImage();
 }
 
