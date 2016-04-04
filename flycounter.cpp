@@ -155,111 +155,6 @@ void FlyCounter::detectShaker()
     Logger::info("Unable to shake");
 }
 
-/* fetches new image from the camera */
-void FlyCounter::updateCameraImage()
-{
-    if (!this->camera->getImage(this->cameraImage))
-    {
-        this->cameraImage = cv::Mat(); // create an empty matrix
-        Logger::error("Could not obtain camera image");
-        return;
-    }
-    cv::cvtColor(this->cameraImage, this->cameraImage, CV_BGR2RGB);
-    this->vials = findVials(this->cameraImage, this->vialSize);
-}
-
-void FlyCounter::updateClusterImage()
-{
-    if (this->cameraImage.empty())
-    {
-        this->clusterImage = cv::Mat();
-        return;
-    }
-
-    std::map<int, int> clusterSizes;
-    std::map<int, int> colorMap;
-    this->clusterImage = cv::Mat(this->cameraImage.size(), this->cameraImage.type(), cv::Scalar(0));
-    this->fliesTotal = 0;
-
-    for (Vial& vial : this->vials)
-    {
-        cv::Mat flies;
-        cv::Mat flyPixels;
-        int     colorIndex = 0;
-        cv::Mat mask =  cv::Mat(this->thresholdImage.size(), this->thresholdImage.type(), cv::Scalar(0));
-
-        /* mask the vails */
-        cv::drawContours(mask, std::vector<std::vector<cv::Point>>(1,vial.pts), 0, cv::Scalar(255, 255, 255), -1);
-        cv::bitwise_and(mask, this->thresholdImage, flies);
-
-        /* get their pixel coordinates in an array */
-        cv::findNonZero(flies, flyPixels);
-        flyPixels.convertTo(flyPixels, CV_32FC2);
-
-        /* cluster the white pixels using DBSCAN */
-        int numberOfPixels = flyPixels.size().height;
-        Cluster labels[numberOfPixels];
-
-        HPDBSCAN dbscan((float*) flyPixels.data, numberOfPixels, 2 /* dimensions */);
-        dbscan.scan(this->epsilon, this->minPoints, labels);
-
-        /* accumulate the number of pixels belonging to one cluster */
-        clusterSizes.clear();
-        for (int i = 0; i < numberOfPixels; ++i)
-        {
-            ++clusterSizes[std::abs(labels[i])];
-        }
-        /* count the flies based on the clusters and color them in the cluster image */
-        for (auto size : clusterSizes)
-        {
-            if (size.first == 0) continue;
-            vial.flieCount += (int)std::ceil((float)size.second / (float)this->pixelsPerFly);
-
-            if (colorMap.find(size.first) == colorMap.end())
-            {
-                colorMap[size.first] = colorIndex;
-                ++colorIndex;
-            }
-        }
-        this->fliesTotal += vial.flieCount;
-
-        /* draw colored flies on the image */
-        for (int i = 0; i < numberOfPixels; ++i)
-        {
-
-            if (std::abs(labels[i]) == 0) continue;
-            Color color = COLORS[colorMap[std::abs(labels[i])] % COLORS.size()];
-            cv::Vec2f coord = flyPixels.at<cv::Vec2f>(0, i);
-            this->clusterImage.at<cv::Vec3b>(coord[1],coord[0]) = color;
-        }
-    }
-}
-
-/* update the threshold image from the currently set camera image */
-void FlyCounter::updateThresholdImage()
-{
-    if (this->cameraImage.empty())
-    {
-        this->thresholdImage = cv::Mat();
-        return;
-    }
-    cv::Mat greyscaleImage;
-    cv::cvtColor(this->cameraImage, greyscaleImage, CV_RGB2GRAY);
-    cv::threshold(greyscaleImage, this->thresholdImage, this->threshold, 255, CV_THRESH_BINARY_INV);
-}
-
-/* create the directory for all the output data - always called before write */
-std::string FlyCounter::makeExperimentDirectory()
-{
-    std::stringstream pathSS;
-    pathSS << this->output << "/" << timeToString(this->experimentStart);
-
-    std::string path = pathSS.str();
-    QDir().mkpath(QString::fromStdString(path));
-
-    return path;
-}
-
 /* stores the fly image */
 void FlyCounter::writeImage(int elapsed)
 {
@@ -370,6 +265,112 @@ const std::string& FlyCounter::getOutput()
     return this->output;
 }
 
+
+void FlyCounter::updateImages()
+{
+    this->imageLock.lock();
+    this->updateCameraImage();
+    this->updateThresholdImage();
+    this->updateClusterImage();
+    this->imageLock.unlock();
+
+    emit countUpdate(QString::number(this->fliesTotal));
+    emit imageUpdate();
+}
+
+/* fetches new image from the camera */
+void FlyCounter::updateCameraImage()
+{
+    if (!this->camera->getImage(this->cameraImage))
+    {
+        this->cameraImage = cv::Mat(); // create an empty matrix
+        Logger::error("Could not obtain camera image");
+        return;
+    }
+    cv::cvtColor(this->cameraImage, this->cameraImage, CV_BGR2RGB);
+    this->vials = findVials(this->cameraImage, this->vialSize);
+}
+
+void FlyCounter::updateClusterImage()
+{
+    if (this->cameraImage.empty())
+    {
+        this->clusterImage = cv::Mat();
+        return;
+    }
+
+    std::map<int, int> clusterSizes;
+    std::map<int, int> colorMap;
+    this->clusterImage = cv::Mat(this->cameraImage.size(), this->cameraImage.type(), cv::Scalar(0));
+    this->fliesTotal = 0;
+
+    for (Vial& vial : this->vials)
+    {
+        cv::Mat flies;
+        cv::Mat flyPixels;
+        int     colorIndex = 0;
+        cv::Mat mask =  cv::Mat(this->thresholdImage.size(), this->thresholdImage.type(), cv::Scalar(0));
+
+        /* mask the vails */
+        cv::drawContours(mask, std::vector<std::vector<cv::Point>>(1,vial.pts), 0, cv::Scalar(255, 255, 255), -1);
+        cv::bitwise_and(mask, this->thresholdImage, flies);
+
+        /* get their pixel coordinates in an array */
+        cv::findNonZero(flies, flyPixels);
+        flyPixels.convertTo(flyPixels, CV_32FC2);
+
+        /* cluster the white pixels using DBSCAN */
+        int numberOfPixels = flyPixels.size().height;
+        Cluster labels[numberOfPixels];
+
+        HPDBSCAN dbscan((float*) flyPixels.data, numberOfPixels, 2 /* dimensions */);
+        dbscan.scan(this->epsilon, this->minPoints, labels);
+
+        /* accumulate the number of pixels belonging to one cluster */
+        clusterSizes.clear();
+        for (int i = 0; i < numberOfPixels; ++i)
+        {
+            ++clusterSizes[std::abs(labels[i])];
+        }
+        /* count the flies based on the clusters and color them in the cluster image */
+        for (auto size : clusterSizes)
+        {
+            if (size.first == 0) continue;
+            vial.flieCount += (int)std::ceil((float)size.second / (float)this->pixelsPerFly);
+
+            if (colorMap.find(size.first) == colorMap.end())
+            {
+                colorMap[size.first] = colorIndex;
+                ++colorIndex;
+            }
+        }
+        this->fliesTotal += vial.flieCount;
+
+        /* draw colored flies on the image */
+        for (int i = 0; i < numberOfPixels; ++i)
+        {
+
+            if (std::abs(labels[i]) == 0) continue;
+            Color color = COLORS[colorMap[std::abs(labels[i])] % COLORS.size()];
+            cv::Vec2f coord = flyPixels.at<cv::Vec2f>(0, i);
+            this->clusterImage.at<cv::Vec3b>(coord[1],coord[0]) = color;
+        }
+    }
+}
+
+/* update the threshold image from the currently set camera image */
+void FlyCounter::updateThresholdImage()
+{
+    if (this->cameraImage.empty())
+    {
+        this->thresholdImage = cv::Mat();
+        return;
+    }
+    cv::Mat greyscaleImage;
+    cv::cvtColor(this->cameraImage, greyscaleImage, CV_RGB2GRAY);
+    cv::threshold(greyscaleImage, this->thresholdImage, this->threshold, 255, CV_THRESH_BINARY_INV);
+}
+
 /* validated time setters - adjust the respective two other timers according to the passed individual timer */
 /* e.g. round time set to 2 -> shake time and lead time have been 5s and 6s before and get changed to 1s */
 void FlyCounter::validatedSetLeadTime(const Duration& time)
@@ -459,16 +460,17 @@ void FlyCounter::unlock()
     this->imageLock.unlock();
 }
 
-void FlyCounter::updateImages()
-{
-    this->imageLock.lock();
-    this->updateCameraImage();
-    this->updateThresholdImage();
-    this->updateClusterImage();
-    this->imageLock.unlock();
 
-    emit countUpdate(QString::number(this->fliesTotal));
-    emit imageUpdate();
+/* create the directory for all the output data - always called before write */
+std::string FlyCounter::makeExperimentDirectory()
+{
+    std::stringstream pathSS;
+    pathSS << this->output << "/" << timeToString(this->experimentStart);
+
+    std::string path = pathSS.str();
+    QDir().mkpath(QString::fromStdString(path));
+
+    return path;
 }
 
 /* destructor */
