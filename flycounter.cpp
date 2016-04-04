@@ -61,6 +61,7 @@ FlyCounter::FlyCounter(QObject* parent)
     pixelsPerFly(0),
     threshold(0),
     vialSize(0),
+    fliesTotal(0),
 
     // results
     output(QTemporaryFile().fileName().toStdString()),
@@ -175,12 +176,12 @@ void FlyCounter::updateClusterImage()
         return;
     }
 
-    int index = 0;
     std::map<int, int> clusterSizes;
     std::map<int, int> colorMap;
     this->clusterImage = cv::Mat(this->cameraImage.size(), this->cameraImage.type(), cv::Scalar(0));
+    this->fliesTotal = 0;
 
-    for (Vial vial : this->vials)
+    for (Vial& vial : this->vials)
     {
         cv::Mat flies;
         cv::Mat flyPixels;
@@ -203,18 +204,16 @@ void FlyCounter::updateClusterImage()
         dbscan.scan(this->epsilon, this->minPoints, labels);
 
         /* accumulate the number of pixels belonging to one cluster */
-        clusterSizes.empty();
+        clusterSizes.clear();
         for (int i = 0; i < numberOfPixels; ++i)
         {
             ++clusterSizes[std::abs(labels[i])];
         }
-
         /* count the flies based on the clusters and color them in the cluster image */
-        this->flies.resize(this->vials.size());
         for (auto size : clusterSizes)
         {
             if (size.first == 0) continue;
-            this->flies[index] += (int)std::ceil(size.second / this->pixelsPerFly);
+            vial.flieCount += (int)std::ceil((float)size.second / (float)this->pixelsPerFly);
 
             if (colorMap.find(size.first) == colorMap.end())
             {
@@ -222,16 +221,17 @@ void FlyCounter::updateClusterImage()
                 ++colorIndex;
             }
         }
+        this->fliesTotal += vial.flieCount;
 
         /* draw colored flies on the image */
         for (int i = 0; i < numberOfPixels; ++i)
         {
+
             if (std::abs(labels[i]) == 0) continue;
             Color color = COLORS[colorMap[std::abs(labels[i])] % COLORS.size()];
             cv::Vec2f coord = flyPixels.at<cv::Vec2f>(0, i);
             this->clusterImage.at<cv::Vec3b>(coord[1],coord[0]) = color;
         }
-        index++;
     }
 }
 
@@ -286,9 +286,9 @@ void FlyCounter::writeResults(int elapsed)
     }
 
     file << elapsed;
-    for (int count : this->flies)
+    for (Vial vial : this->vials)
     {
-        file << "\t" << count;
+        file << "\t" << vial.flieCount;
     }
     file << std::endl;
     file.close();
@@ -368,11 +368,6 @@ const Vials& FlyCounter::getVials()
 const std::string& FlyCounter::getOutput()
 {
     return this->output;
-}
-
-const Flies& FlyCounter::getFlies()
-{
-    return this->flies;
 }
 
 /* validated time setters - adjust the respective two other timers according to the passed individual timer */
@@ -472,7 +467,7 @@ void FlyCounter::updateImages()
     this->updateClusterImage();
     this->imageLock.unlock();
 
-    emit countUpdate(QString::number(std::accumulate(this->flies.begin(), this->flies.end(), 0)));
+    emit countUpdate(QString::number(this->fliesTotal));
     emit imageUpdate();
 }
 

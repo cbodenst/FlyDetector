@@ -15,7 +15,6 @@
 #include "timer.h"
 #include "vials.h"
 
-typedef std::vector<int>   Flies;
 typedef cv::Vec3b          Color;
 typedef std::vector<Color> Colors;
 
@@ -42,7 +41,7 @@ private:
     int   threshold;
     int   vialSize;
     Vials vials;
-    Flies flies;
+    int fliesTotal;
 
     /* results */
     Timepoint   experimentStart;
@@ -107,7 +106,6 @@ public:
     void validatedSetShakeTime(const Duration& time);
 
     /* results */
-    const Flies& getFlies();
     const std::string& getOutput();
 
     /* execution */

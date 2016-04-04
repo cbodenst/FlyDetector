@@ -12,21 +12,21 @@ struct Vial
     cv::Point center;
     int area;
     int radius;
+    int flieCount;
 
     Vial(const std::vector<cv::Point>& points)
         :
         pts(points),
         center(cv::Point(0,0)),
         area(M_PI),
-        radius(1)
+        radius(1),
+        flieCount(0)
     {
-        this->pts = points;
-
+        // Compute mean and radius
         for(cv::Point point : points)
             center += point;
         center.x /= points.size();
         center.y /= points.size();
-
         area = cv::contourArea(pts);
 
         radius = sqrt(area/M_PI);

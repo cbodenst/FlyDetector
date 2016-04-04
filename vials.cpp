@@ -28,17 +28,23 @@ cv::Mat drawVials(const Vials& vials, const cv::Mat& image)
     int baseline;
     int counter = 0;
     cv::Mat vialImage = image.clone();
+    char rows[4] = {'A','B','C','D'};
 
     for (Vial vial : vials)
     {
-        std::string vialNumber = std::to_string(counter);
-        cv::Size fontSize = cv::getTextSize(vialNumber, FONT, FONT_SCALE, FONT_STROKE, &baseline);
+        std::stringstream vialNumber;
+        vialNumber << rows[counter/5]<< std::to_string(counter % 5 + 1);
+        cv::Size fontSize = cv::getTextSize(vialNumber.str(), FONT, FONT_SCALE, FONT_STROKE, &baseline);
+
+        std::stringstream flies;
+        flies <<  vial.flieCount;
 
         cv::drawContours(vialImage, std::vector<std::vector<cv::Point>>(1,vial.pts), 0, VIAL_COLOR, VIAL_STROKE);
         cv::Point center = vial.center;
         center.x -= fontSize.width/2,
         center.y += fontSize.height/2;
-        cv::putText(vialImage, vialNumber, center, FONT, FONT_SCALE, VIAL_COLOR, FONT_STROKE);
+        cv::putText(vialImage, vialNumber.str(), center, FONT, FONT_SCALE, VIAL_COLOR, FONT_STROKE);
+        cv::putText(vialImage, flies.str(), center + cv::Point( vial.radius + fontSize.width, 0), FONT, FONT_SCALE, VIAL_COLOR, FONT_STROKE);
         ++counter;
     }
 
@@ -47,16 +53,11 @@ cv::Mat drawVials(const Vials& vials, const cv::Mat& image)
 
 Vials findVials(const cv::Mat& image, int vialSize)
 {
-    // Bluescreen image
+    // Greenscreen image
     Vials vials;
     cv::Mat hsv;
     cv::cvtColor(image,hsv, CV_BGR2HSV);
-    cv::inRange(hsv, cv::Scalar(0,50,0), cv::Scalar(100,255,255), hsv);
-
-    cv::Mat rez;
-    cv::resize(hsv,rez,cv::Size(1500,1000));
-
-    cv::imshow("HSV",rez);
+    cv::inRange(hsv, cv::Scalar(32,100,0), cv::Scalar(100,255,255), hsv);
 
     // Pad image
     cv::Mat padded;
@@ -67,9 +68,8 @@ Vials findVials(const cv::Mat& image, int vialSize)
 
     // Find vial contours
     std::vector< std::vector<cv::Point> > contours;
-    //cv::bitwise_not(padded,padded);
-    cv::dilate(padded, padded, cv::Mat(),cv::Point(-1,-1),1);
-    cv::findContours( padded, contours, CV_RETR_LIST, CV_CHAIN_APPROX_NONE,cv::Point(-5,-5));
+    cv::dilate(padded, padded, cv::Mat(),cv::Point(-1,-1),4);
+    cv::findContours( padded, contours, CV_RETR_LIST, CV_CHAIN_APPROX_NONE,cv::Point(-padding,-padding));
     int vialArea = vialSize*vialSize*M_PI;
     int maxArea = vialArea*1.33;
     int minArea = vialArea*0.66;
@@ -78,6 +78,8 @@ Vials findVials(const cv::Mat& image, int vialSize)
         if(contourArea(contours[i]) > minArea && contourArea(contours[i]) < maxArea)
             vials.push_back(Vial(contours[i]));
     }
+
+    // Sort vials
     std::sort(vials.begin(), vials.end(), compareVials);
 
     return vials;
