@@ -99,7 +99,7 @@ public slots:
     void on_minPoints_valueChanged(int minPoints);
     void on_pixelsPerFly_valueChanged(int pixelsPerFly);
     void on_threshold_valueChanged(int threshold);
-    void on_vialSize_valueChanged(int vialSize);
+    void on_vialSize_valueChanged(int arg1);
 
     /* results */
     void on_outputPath_textChanged(const QString& path);

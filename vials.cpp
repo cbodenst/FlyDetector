@@ -4,7 +4,7 @@
 
 #include "vials.h"
 
-static const cv::Scalar VIAL_COLOR  = cv::Scalar(0, 255, 0);
+static const cv::Scalar VIAL_COLOR  = cv::Scalar(0, 0, 255);
 static const int        VIAL_STROKE = 5;
 static const int        FONT        = CV_FONT_HERSHEY_SIMPLEX;
 static const int        FONT_SCALE  = 1;
@@ -56,7 +56,7 @@ Vials findVials(const cv::Mat& image, int vialSize)
     // Greenscreen image
     Vials vials;
     cv::Mat hsv;
-    cv::cvtColor(image,hsv, CV_BGR2HSV);
+    cv::cvtColor(image, hsv, CV_BGR2HSV);
     cv::inRange(hsv, cv::Scalar(32,100,0), cv::Scalar(100,255,255), hsv);
 
     // Pad image

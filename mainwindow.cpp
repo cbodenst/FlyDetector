@@ -210,7 +210,6 @@ void MainWindow::loadSettings(const QString& path)
     this->ui->threshold->setValue(settings.value(MainWindow::THRESHOLD).toInt());
     this->on_threshold_valueChanged(settings.value(MainWindow::THRESHOLD).toInt());
     this->ui->vialSize->setValue(settings.value(MainWindow::VIAL_SIZE).toInt());
-    this->on_vialSize_valueChanged(settings.value(MainWindow::VIAL_SIZE).toInt());
     this->ui->outputPath->setText(settings.value(MainWindow::OUTPUT_PATH).toString());
     this->on_outputPath_textChanged(settings.value(MainWindow::OUTPUT_PATH).toString());
     this->ui->saveImages->setChecked(settings.value(MainWindow::SAVE_IMAGES).toBool());
@@ -331,26 +330,39 @@ void MainWindow::on_shakeTime_valueChanged(int time)
 void MainWindow::on_epsilon_valueChanged(int epsilon)
 {
     this->flyCounter.setEpsilon(epsilon);
+    this->flyCounter.updateClusterImage();
+    this->updateImage();
 }
 
 void MainWindow::on_minPoints_valueChanged(int minPoints)
 {
     this->flyCounter.setMinPoints(minPoints);
+    this->flyCounter.updateClusterImage();
+    this->updateImage();
 }
 
 void MainWindow::on_pixelsPerFly_valueChanged(int pixelsPerFly)
 {
     this->flyCounter.setPixelsPerFly(pixelsPerFly);
+    this->flyCounter.updateClusterImage();
+    this->updateImage();
 }
 
 void MainWindow::on_threshold_valueChanged(int threshold)
 {
     this->flyCounter.setThreshold(threshold);
+    this->flyCounter.updateThresholdImage();
+    this->updateImage();
 }
 
 void MainWindow::on_vialSize_valueChanged(int vialSize)
 {
     this->flyCounter.setVialSize(vialSize);
+    if (!this->flyCounter.getCameraImage().empty()){
+        this->flyCounter.updateVials();
+        this->flyCounter.updateClusterImage();
+        this->updateImage();
+    }
 }
 
 /* result settings */

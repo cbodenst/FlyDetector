@@ -300,7 +300,7 @@ void FlyCounter::updateCameraImage()
         return;
     }
     cv::cvtColor(this->cameraImage, this->cameraImage, CV_BGR2RGB);
-    this->vials = findVials(this->cameraImage, this->vialSize);
+    this->updateVials();
 }
 
 void FlyCounter::updateClusterImage()
@@ -381,6 +381,11 @@ void FlyCounter::updateThresholdImage()
     cv::Mat greyscaleImage;
     cv::cvtColor(this->cameraImage, greyscaleImage, CV_RGB2GRAY);
     cv::threshold(greyscaleImage, this->thresholdImage, this->threshold, 255, CV_THRESH_BINARY_INV);
+}
+
+void FlyCounter::updateVials()
+{
+    this->vials = findVials(this->cameraImage, this->vialSize);
 }
 
 /* validated time setters - adjust the respective two other timers according to the passed individual timer */
