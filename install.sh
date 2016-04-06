@@ -1,7 +1,7 @@
 #!/bin/bash
 
-sudo cp fly-shaker.rules /etc/udev/rules.d/fly-shaker.rules
 git pull
+sudo cp fly-shaker.rules /etc/udev/rules.d/fly-shaker.rules
 mkdir -p build
 cd build
 qmake ../FlyDetector.pro -r -spec linux-g++
