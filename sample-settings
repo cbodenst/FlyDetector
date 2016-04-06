@@ -1,0 +1,13 @@
+[General]
+displayVials=true
+epsilon=5
+leadTime=1
+minPoints=32
+mode=0
+outputPath=/home/cboden/Documents
+pixelsPerFly=159
+roundTime=3
+saveImages=true
+shakeTime=1
+threshold=100
+vialSize=150
