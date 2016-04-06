@@ -57,7 +57,7 @@ Vials findVials(const cv::Mat& image, int vialSize)
     Vials vials;
     cv::Mat hsv;
     cv::cvtColor(image, hsv, CV_BGR2HSV);
-    cv::inRange(hsv, cv::Scalar(32,100,0), cv::Scalar(100,255,100), hsv);
+    cv::inRange(hsv, cv::Scalar(40,150,0), cv::Scalar(80,255,80), hsv);
 
     // Pad image
     cv::Mat padded;
@@ -75,8 +75,19 @@ Vials findVials(const cv::Mat& image, int vialSize)
     int minArea = vialArea*0.66;
     for (unsigned int i = 0; i < contours.size(); i++)
     {
-        if(contourArea(contours[i]) > minArea && contourArea(contours[i]) < maxArea)
+        float area = cv::contourArea(contours[i]);
+        if(area > minArea && area < maxArea)
+        {
+            // Shift contours to center due perpective distortion
+            float shift = 0.003;
+            cv::Point center(image.size[0]/2,image.size[1]/2);
+            for (unsigned int j = 0; j < contours[i].size(); j++)
+            {
+                cv::Point distance = center - contours[i][j];
+                contours[i][j] += distance * shift;
+            }
             vials.push_back(Vial(contours[i]));
+        }
     }
 
     // Sort vials
