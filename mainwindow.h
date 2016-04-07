@@ -59,6 +59,8 @@ private slots:
     void resizeEvent(QResizeEvent* event);
     void updateImage();
 
+    void on_actionShow_Log_toggled(bool arg1);
+
 public:
     static const QString DEFAULT_PATH;
 
