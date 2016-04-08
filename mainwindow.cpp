@@ -81,6 +81,7 @@ void MainWindow::setupSignals()
     connect(&this->flyCounter, SIGNAL(countUpdate(QString)), this->ui->flies, SLOT(setText(QString)));
     connect(&this->flyCounter, SIGNAL(imageUpdate()),        this,            SLOT(updateImage()));
     connect(&this->flyCounter, SIGNAL(timeUpdate(QString)),  this->ui->timer, SLOT(setText(QString)));
+    connect(this->ui->messageDock, SIGNAL(visibilityChanged(bool)), this->ui->actionShow_Log, SLOT(setChecked(bool)));
 }
 
 /* loads initial settings from the default location, if not present creates them first from the value set in the interface */
@@ -425,4 +426,10 @@ MainWindow::~MainWindow()
     this->saveSettings(DEFAULT_PATH);
 
     delete this->ui;
+}
+
+void MainWindow::on_actionShow_Log_toggled(bool arg1)
+{
+
+    arg1 ? this->ui->messageDock->show() : this->ui->messageDock->hide();
 }

@@ -277,6 +277,65 @@ const std::string& FlyCounter::getOutput()
     return this->output;
 }
 
+/* Methods for external usage*/
+int FlyCounter::count(cv::Mat img)
+{
+    this->thresh = this-> generateThresholdImage(img);
+    Vials vials;
+    return countFlies(thresh, vials);
+}
+
+cv::Mat FlyCounter::generateThresholdImage(const cv::Mat &img)
+{
+    cv::Mat ret;
+    cv::cvtColor(img, ret, CV_RGB2GRAY);
+    cv::threshold(ret, ret, this->threshold, 255, CV_THRESH_BINARY_INV);
+    return ret;
+}
+
+int FlyCounter::countFlies(const cv::Mat& threshImg, Vials& vials)
+{
+    int flies_total = 0;
+    cv::Mat flies;
+    cv::Mat mask =  cv::Mat(threshImg.size(), threshImg.type(), cv::Scalar(0));
+
+    for (Vial& vial : vials)
+    {
+        /* mask the vails */
+        cv::drawContours(mask, std::vector<std::vector<cv::Point>>(1,vial.pts), 0, cv::Scalar(255, 255, 255), -1);
+        cv::bitwise_and(mask, threshImg, flies);
+
+        /* get their pixel coordinates in an array */
+        cv::findNonZero(flies, vial.flyPixels);
+        vial.flyPixels.convertTo(vial.flyPixels, CV_32FC2);
+
+        /* cluster the white pixels using DBSCAN */
+        int numberOfPixels = vial.flyPixels.size().height;
+        Cluster labels[numberOfPixels];
+
+
+        HPDBSCAN dbscan((float*) vial.flyPixels.data, numberOfPixels, 2 /* dimensions */);
+        dbscan.scan(this->epsilon, this->minPoints, labels);
+
+        vial.labels = std::vector<Cluster>(labels, labels + numberOfPixels);
+
+        /* accumulate the number of pixels belonging to one cluster */
+        vial.clusterSizes.clear();
+        for (int i = 0; i < numberOfPixels; ++i)
+        {
+            ++vial.clusterSizes[std::abs(labels[i])];
+        }
+        /* count the flies based on the clusters and color them in the cluster image */
+        vial.flyCount = 0;
+        for (auto size : vial.clusterSizes)
+        {
+            if (size.first == 0) continue;
+            vial.flyCount += (int)std::ceil((float)size.second / (float)this->pixelsPerFly);
+        }
+        flies_total += vial.flyCount;
+    }
+    return flies_total;
+}
 
 void FlyCounter::updateImages()
 {
@@ -311,61 +370,31 @@ void FlyCounter::updateClusterImage()
         return;
     }
 
-    std::map<int, int> clusterSizes;
-    std::map<int, int> colorMap;
-    this->clusterImage = cv::Mat(this->cameraImage.size(), this->cameraImage.type(), cv::Scalar(0));
-    this->fliesTotal = 0;
+    this->countFlies(this->thresholdImage, this->vials);
 
+    std::map<int, int> colorMap;
+    clusterImage = cv::Mat(this->cameraImage.size(), this->cameraImage.type(), cv::Scalar(0));
+    int colorIndex = 0;
+
+    /* draw colored flies on the image */
     for (Vial& vial : this->vials)
     {
-        cv::Mat flies;
-        cv::Mat flyPixels;
-        int     colorIndex = 0;
-        cv::Mat mask =  cv::Mat(this->thresholdImage.size(), this->thresholdImage.type(), cv::Scalar(0));
-
-        /* mask the vails */
-        cv::drawContours(mask, std::vector<std::vector<cv::Point>>(1,vial.pts), 0, cv::Scalar(255, 255, 255), -1);
-        cv::bitwise_and(mask, this->thresholdImage, flies);
-
-        /* get their pixel coordinates in an array */
-        cv::findNonZero(flies, flyPixels);
-        flyPixels.convertTo(flyPixels, CV_32FC2);
-
-        /* cluster the white pixels using DBSCAN */
-        int numberOfPixels = flyPixels.size().height;
-        Cluster labels[numberOfPixels];
-
-        HPDBSCAN dbscan((float*) flyPixels.data, numberOfPixels, 2 /* dimensions */);
-        dbscan.scan(this->epsilon, this->minPoints, labels);
-
-        /* accumulate the number of pixels belonging to one cluster */
-        clusterSizes.clear();
-        for (int i = 0; i < numberOfPixels; ++i)
-        {
-            ++clusterSizes[std::abs(labels[i])];
-        }
-        /* count the flies based on the clusters and color them in the cluster image */
-        vial.flyCount = 0;
-        for (auto size : clusterSizes)
+        for (auto size : vial.clusterSizes)
         {
             if (size.first == 0) continue;
-            vial.flyCount += (int)std::ceil((float)size.second / (float)this->pixelsPerFly);
-
             if (colorMap.find(size.first) == colorMap.end())
             {
                 colorMap[size.first] = colorIndex;
                 ++colorIndex;
             }
         }
-        this->fliesTotal += vial.flyCount;
 
-        /* draw colored flies on the image */
-        for (int i = 0; i < numberOfPixels; ++i)
+        for (unsigned int i = 0; i < vial.labels.size(); ++i)
         {
 
-            if (std::abs(labels[i]) == 0) continue;
-            Color color = COLORS[colorMap[std::abs(labels[i])] % COLORS.size()];
-            cv::Vec2f coord = flyPixels.at<cv::Vec2f>(0, i);
+            if (std::abs(vial.labels[i]) == 0) continue;
+            Color color = COLORS[colorMap[std::abs(vial.labels[i])] % COLORS.size()];
+            cv::Vec2f coord = vial.flyPixels.at<cv::Vec2f>(0, i);
             this->clusterImage.at<cv::Vec3b>(coord[1],coord[0]) = color;
         }
     }
@@ -379,9 +408,7 @@ void FlyCounter::updateThresholdImage()
         this->thresholdImage = cv::Mat();
         return;
     }
-    cv::Mat greyscaleImage;
-    cv::cvtColor(this->cameraImage, greyscaleImage, CV_RGB2GRAY);
-    cv::threshold(greyscaleImage, this->thresholdImage, this->threshold, 255, CV_THRESH_BINARY_INV);
+    this->thresholdImage = this->generateThresholdImage(this->cameraImage);
 }
 
 void FlyCounter::updateVials()

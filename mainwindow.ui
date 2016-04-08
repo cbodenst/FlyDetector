@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>964</width>
-    <height>716</height>
+    <height>886</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -45,11 +45,11 @@ QLabel {
 	margin-right: 10px;
 }</string>
    </property>
-   <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0,0">
+   <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0">
     <property name="spacing">
      <number>6</number>
     </property>
-    <item row="2" column="9">
+    <item row="2" column="2">
      <layout class="QVBoxLayout" name="verticalLayout_3">
       <item>
        <widget class="QGroupBox" name="experiment">
@@ -820,7 +820,7 @@ QLabel {
       </item>
      </layout>
     </item>
-    <item row="0" column="0" colspan="9">
+    <item row="0" column="0" colspan="2">
      <widget class="QWidget" name="topFrame" native="true">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
@@ -955,7 +955,7 @@ QLabel {
       </layout>
      </widget>
     </item>
-    <item row="2" column="0" rowspan="2" colspan="9">
+    <item row="2" column="0" rowspan="2" colspan="2">
      <widget class="QGraphicsView" name="image">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
@@ -963,65 +963,6 @@ QLabel {
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
-     </widget>
-    </item>
-    <item row="4" column="0" colspan="10">
-     <widget class="QScrollArea" name="messageScrollArea">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>30</height>
-       </size>
-      </property>
-      <property name="widgetResizable">
-       <bool>true</bool>
-      </property>
-      <widget class="QWidget" name="messageScrollAreaLayout">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>0</y>
-         <width>931</width>
-         <height>75</height>
-        </rect>
-       </property>
-       <layout class="QVBoxLayout" name="verticalLayout_5">
-        <property name="spacing">
-         <number>0</number>
-        </property>
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="QPlainTextEdit" name="messages">
-          <property name="verticalScrollBarPolicy">
-           <enum>Qt::ScrollBarAlwaysOff</enum>
-          </property>
-          <property name="horizontalScrollBarPolicy">
-           <enum>Qt::ScrollBarAlwaysOff</enum>
-          </property>
-          <property name="readOnly">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
      </widget>
     </item>
    </layout>
@@ -1042,7 +983,32 @@ QLabel {
     <addaction name="actionSave"/>
     <addaction name="actionLoad"/>
    </widget>
+   <widget class="QMenu" name="menuWindow">
+    <property name="title">
+     <string>Window</string>
+    </property>
+    <addaction name="actionShow_Log"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuWindow"/>
+  </widget>
+  <widget class="QDockWidget" name="messageDock">
+   <property name="minimumSize">
+    <size>
+     <width>93</width>
+     <height>50</height>
+    </size>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents">
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <item>
+      <widget class="QPlainTextEdit" name="messages"/>
+     </item>
+    </layout>
+   </widget>
   </widget>
   <action name="actionSave">
    <property name="text">
@@ -1052,6 +1018,17 @@ QLabel {
   <action name="actionLoad">
    <property name="text">
     <string>&amp;Load</string>
+   </property>
+  </action>
+  <action name="actionShow_Log">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Logger</string>
    </property>
   </action>
  </widget>

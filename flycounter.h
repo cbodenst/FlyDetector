@@ -15,7 +15,6 @@
 #include "timer.h"
 #include "vials.h"
 
-typedef cv::Vec3b          Color;
 typedef std::vector<Color> Colors;
 
 class FlyCounter : public QObject
@@ -76,6 +75,11 @@ public:
     static Colors COLORS;
 
     explicit FlyCounter(QObject* parent=nullptr);
+
+    /* External API */
+    int count(cv::Mat img);
+    cv::Mat generateThresholdImage(const cv::Mat& img);
+    int countFlies(const cv::Mat & threshImg, Vials &vials);
 
     /* imaging getters */
     const cv::Mat& getCameraImage();

@@ -3,8 +3,11 @@
 
 #include <vector>
 #include <math.h>
+#include "dbscan/constants.h"
 
 #include <opencv2/opencv.hpp>
+
+typedef cv::Vec3b          Color;
 
 struct Vial
 {
@@ -13,13 +16,14 @@ struct Vial
     int area;
     int radius;
     int flyCount;
+    cv::Mat flyPixels;
+    std::vector<Cluster> labels;
+    std::map<int, int> clusterSizes;
 
     Vial(const std::vector<cv::Point>& points)
         :
         pts(points),
         center(cv::Point(0,0)),
-        area(M_PI),
-        radius(1),
         flyCount(0)
     {
         // Compute mean and radius
