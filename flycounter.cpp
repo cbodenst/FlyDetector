@@ -280,9 +280,9 @@ const std::string& FlyCounter::getOutput()
 /* Methods for external usage*/
 int FlyCounter::count(cv::Mat img)
 {
-    this->thresh = this-> generateThresholdImage(img);
+    this->thresholdImage = this-> generateThresholdImage(img);
     Vials vials;
-    return countFlies(thresh, vials);
+    return countFlies(this->thresholdImage, vials);
 }
 
 cv::Mat FlyCounter::generateThresholdImage(const cv::Mat &img)
@@ -297,11 +297,11 @@ int FlyCounter::countFlies(const cv::Mat& threshImg, Vials& vials)
 {
     int flies_total = 0;
     cv::Mat flies;
-    cv::Mat mask =  cv::Mat(threshImg.size(), threshImg.type(), cv::Scalar(0));
 
     for (Vial& vial : vials)
     {
         /* mask the vails */
+        cv::Mat mask =  cv::Mat(threshImg.size(), threshImg.type(), cv::Scalar(0));
         cv::drawContours(mask, std::vector<std::vector<cv::Point>>(1,vial.pts), 0, cv::Scalar(255, 255, 255), -1);
         cv::bitwise_and(mask, threshImg, flies);
 
