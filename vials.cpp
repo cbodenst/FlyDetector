@@ -57,7 +57,7 @@ Vials findVials(const cv::Mat& image, int vialSize)
     Vials vials;
     cv::Mat hsv;
     cv::cvtColor(image, hsv, CV_BGR2HSV);
-    cv::inRange(hsv, cv::Scalar(40,150,0), cv::Scalar(80,255,80), hsv);
+    cv::inRange(hsv, cv::Scalar(40,150,0), cv::Scalar(80,255,255), hsv);
 
     // Pad image
     cv::Mat padded;

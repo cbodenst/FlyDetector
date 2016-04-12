@@ -19,7 +19,9 @@ typedef std::vector<Color> Colors;
 
 class FlyCounter : public QObject
 {
+#ifndef SWIG
     Q_OBJECT
+#endif
 
 private:
     /* experiment data */
@@ -65,20 +67,22 @@ private:
     void writeImage(int elapsed);
     void writeResults(int elapsed);
 
+#ifndef SWIG
 signals:
     /* GUI signals */
     void countUpdate(QString flies);
     void imageUpdate();
     void timeUpdate(QString time);
-
+#endif
 public:
     static Colors COLORS;
 
     explicit FlyCounter(QObject* parent=nullptr);
 
     /* External API */
-    int count(cv::Mat img);
+    int count(const cv::Mat& img);
     cv::Mat generateThresholdImage(const cv::Mat& img);
+    cv::Mat generateClusterImage(const cv::Mat& thresh, Vials &vials);
     int countFlies(const cv::Mat & threshImg, Vials &vials);
 
     /* imaging getters */
@@ -125,7 +129,9 @@ public:
     /* destructor */
     ~FlyCounter();
 
+#ifndef SWIG
 public slots:
+#endif
     void setEpsilon(int value);
     void setMinPoints(int value);
     void setPixelsPerFly(int value);
