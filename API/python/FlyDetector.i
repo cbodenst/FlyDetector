@@ -3,7 +3,6 @@
 %{
     #define SWIG_FILE_WITH_INIT
     #include "flycounter.h"
-    #include "timer.h"
 %}
 
 /* Convert C++ exceptions to Python exception */ 
