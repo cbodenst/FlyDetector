@@ -278,11 +278,12 @@ const std::string& FlyCounter::getOutput()
 }
 
 /* Methods for external usage*/
-int FlyCounter::count(cv::Mat img)
+int FlyCounter::count(const cv::Mat& img)
 {
-    this->thresholdImage = this-> generateThresholdImage(img);
-    Vials vials;
-    return countFlies(this->thresholdImage, vials);
+    cv::Mat thresh = this->generateThresholdImage(img);
+    Vials vials = findVials(img, this->vialSize);
+    int num_flies = countFlies(thresh, vials);
+    return num_flies;
 }
 
 cv::Mat FlyCounter::generateThresholdImage(const cv::Mat &img)
@@ -293,11 +294,41 @@ cv::Mat FlyCounter::generateThresholdImage(const cv::Mat &img)
     return ret;
 }
 
+cv::Mat FlyCounter::generateClusterImage(const cv::Mat &img, Vials &vials)
+{
+    std::map<int, int> colorMap;
+    cv::Mat clusterImg = cv::Mat(img.size(), img.type(), cv::Scalar(0));
+    int colorIndex = 0;
+
+    /* draw colored flies on the image */
+    for (Vial& vial : vials)
+    {
+        for (auto size : vial.clusterSizes)
+        {
+            if (size.first == 0) continue;
+            if (colorMap.find(size.first) == colorMap.end())
+            {
+                colorMap[size.first] = colorIndex;
+                ++colorIndex;
+            }
+        }
+
+        for (unsigned int i = 0; i < vial.labels.size(); ++i)
+        {
+
+            if (std::abs(vial.labels[i]) == 0) continue;
+            Color color = COLORS[colorMap[std::abs(vial.labels[i])] % COLORS.size()];
+            cv::Vec2f coord = vial.flyPixels.at<cv::Vec2f>(0, i);
+            clusterImg.at<cv::Vec3b>(coord[1],coord[0]) = color;
+        }
+    }
+    return clusterImg;
+}
+
 int FlyCounter::countFlies(const cv::Mat& threshImg, Vials& vials)
 {
     int flies_total = 0;
     cv::Mat flies;
-
     for (Vial& vial : vials)
     {
         /* mask the vails */
@@ -372,32 +403,7 @@ void FlyCounter::updateClusterImage()
 
     this->countFlies(this->thresholdImage, this->vials);
 
-    std::map<int, int> colorMap;
-    clusterImage = cv::Mat(this->cameraImage.size(), this->cameraImage.type(), cv::Scalar(0));
-    int colorIndex = 0;
-
-    /* draw colored flies on the image */
-    for (Vial& vial : this->vials)
-    {
-        for (auto size : vial.clusterSizes)
-        {
-            if (size.first == 0) continue;
-            if (colorMap.find(size.first) == colorMap.end())
-            {
-                colorMap[size.first] = colorIndex;
-                ++colorIndex;
-            }
-        }
-
-        for (unsigned int i = 0; i < vial.labels.size(); ++i)
-        {
-
-            if (std::abs(vial.labels[i]) == 0) continue;
-            Color color = COLORS[colorMap[std::abs(vial.labels[i])] % COLORS.size()];
-            cv::Vec2f coord = vial.flyPixels.at<cv::Vec2f>(0, i);
-            this->clusterImage.at<cv::Vec3b>(coord[1],coord[0]) = color;
-        }
-    }
+    clusterImage = generateClusterImage(this->cameraImage, this->vials);
 }
 
 /* update the threshold image from the currently set camera image */
