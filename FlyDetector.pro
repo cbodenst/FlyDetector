@@ -18,7 +18,6 @@ QMAKE_LFLAGS +=  -fopenmp
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    flycounter.cpp \
     filecam.cpp \
     webcamera.cpp \
     reflexcam.cpp \
@@ -29,11 +28,12 @@ SOURCES += main.cpp\
     vials.cpp \
     usbshaker.cpp \
     noshaker.cpp \
-    logger.cpp
+    logger.cpp \
+    flycountercontroller.cpp \
+    flycounter.cpp
 
 HEADERS  += mainwindow.h \
     cam.h \
-    flycounter.h \
     filecam.h \
     webcamera.h \
     reflexcam.h \
@@ -48,7 +48,9 @@ HEADERS  += mainwindow.h \
     usbshaker.h \
     shaker.h \
     noshaker.h \
-    logger.h
+    logger.h \
+    flycountercontroller.h \
+    flycounter.h
 
 FORMS    += mainwindow.ui
 

@@ -3,6 +3,7 @@
 %{
     #define SWIG_FILE_WITH_INIT
     #include "flycounter.h"
+    #include "vials.h"
 %}
 
 /* Convert C++ exceptions to Python exception */ 
@@ -18,11 +19,16 @@
 /* Wrap std::string */
 %include std_string.i
 
+/* Wrap std::vector */
+%include "std_vector.i"
+
 /* Wrap OpenCV */
 %include opencv.i
 
 /*Wrap FlyCounter*/
 %include "flycounter.h"
+%include "vials.h"
+%template(Vials) std::vector<Vial>;
 
 /* Remove unwanted *_swigregister globals */
 %pythoncode %{

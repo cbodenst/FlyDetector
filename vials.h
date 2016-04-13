@@ -19,7 +19,10 @@ struct Vial
     cv::Mat flyPixels;
     std::vector<Cluster> labels;
     std::map<int, int> clusterSizes;
-
+    Vial():
+        center(cv::Point(0,0)),
+        flyCount(0)
+    {}
     Vial(const std::vector<cv::Point>& points)
         :
         pts(points),

@@ -49,5 +49,5 @@ IF(SWIG_FOUND)
     add_compile_options(-Wall -std=c++11)
         
     SWIG_ADD_MODULE(FlyDetector python FlyDetector.i "cv_converter.h")
-    SWIG_LINK_LIBRARIES(FlyDetector ${PYTHON_LIBRARIES} flyDetector ${OpenCV_LIBS} Qt5::Core)
+    SWIG_LINK_LIBRARIES(FlyDetector ${PYTHON_LIBRARIES} flyDetector ${OpenCV_LIBS})
 ENDIF(SWIG_FOUND)
