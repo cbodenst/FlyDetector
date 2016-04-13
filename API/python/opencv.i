@@ -38,11 +38,13 @@ import_array();
 ( const cv::Mat & ),
 (       cv::Mat & )
 {
-    $result = toNumpy($1,false);
+    $result = toNumpy($1,true);
 }
 
 %typemap(out)
 (cv::Mat)
 {
-    $result = toNumpy(&$1,false);
+    $result = toNumpy(&$1,true);
 }
+
+

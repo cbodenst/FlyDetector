@@ -59,10 +59,10 @@ PyObject* toNumpy(cv::Mat* cv_mat, bool copy = true)
     for (int i = 0; i < ndims; i++) 
         dims[i] = cv_mat->size[i];
     if(channels > 1)
-    	dims[ndims]=channels;
+    	dims[ndims - 1]=channels;
     
     int type;
-    switch(cv_mat->type())
+    switch(cv_mat->depth())
     {   
         case CV_8S : type = NPY_INT8; break;
         case CV_16S : type = NPY_INT16; break;

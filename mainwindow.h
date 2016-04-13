@@ -7,7 +7,7 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "flycounter.h"
+#include "flycountercontroller.h"
 
 /* view type set */
 enum ViewMode
@@ -31,7 +31,7 @@ private:
 
     QPixmap         image;
     QGraphicsScene* scene;
-    FlyCounter      flyCounter;
+    FlyCounterController      flyCounter;
 
     /* initialization */
     void setupUI();
