@@ -24,7 +24,7 @@ import_array();
         PyErr_SetString(PyExc_ValueError,"Input object is not an array");
         return NULL;
     }
-    $1=toCV(temp,true);
+    $1=toCV(temp, false);
 }
 
 %typemap(freearg)
@@ -38,13 +38,13 @@ import_array();
 ( const cv::Mat & ),
 (       cv::Mat & )
 {
-    $result = toNumpy($1,true);
+    $result = toNumpy($1, true);
 }
 
 %typemap(out)
 (cv::Mat)
 {
-    $result = toNumpy(&$1,true);
+    $result = toNumpy(&$1, true);
 }
 
 
