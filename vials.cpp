@@ -57,7 +57,7 @@ Vials findVials(const cv::Mat& image, int vialSize)
     Vials vials;
     cv::Mat hsv;
     cv::cvtColor(image, hsv, CV_BGR2HSV);
-    cv::inRange(hsv, cv::Scalar(40,150,0), cv::Scalar(80,255,255), hsv);
+    cv::inRange(hsv, cv::Scalar(40,150,10), cv::Scalar(80,255,255), hsv);
 
     // Pad image
     cv::Mat padded;
@@ -68,7 +68,7 @@ Vials findVials(const cv::Mat& image, int vialSize)
 
     // Find vial contours
     std::vector< std::vector<cv::Point> > contours;
-    cv::dilate(padded, padded, cv::Mat(),cv::Point(-1,-1),4);
+    cv::dilate(padded, padded, cv::Mat(),cv::Point(-1,-1),6);
     cv::findContours( padded, contours, CV_RETR_LIST, CV_CHAIN_APPROX_NONE,cv::Point(-padding,-padding));
     int vialArea = vialSize*vialSize*M_PI;
     int maxArea = vialArea*1.33;
@@ -79,7 +79,7 @@ Vials findVials(const cv::Mat& image, int vialSize)
         if(area > minArea && area < maxArea)
         {
             // Shift contours to center due perpective distortion
-            float shift = 0.003;
+            float shift = 0.002;
             cv::Point center(image.size[0]/2,image.size[1]/2);
             for (unsigned int j = 0; j < contours[i].size(); j++)
             {
