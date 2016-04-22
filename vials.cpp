@@ -71,8 +71,8 @@ Vials findVials(const cv::Mat& image, int vialSize)
     cv::dilate(padded, padded, cv::Mat(),cv::Point(-1,-1),6);
     cv::findContours( padded, contours, CV_RETR_LIST, CV_CHAIN_APPROX_NONE,cv::Point(-padding,-padding));
     int vialArea = vialSize*vialSize*M_PI;
-    int maxArea = vialArea*1.33;
-    int minArea = vialArea*0.66;
+    int maxArea = vialArea*1.2;
+    int minArea = vialArea*0.8;
     for (unsigned int i = 0; i < contours.size(); i++)
     {
         float area = cv::contourArea(contours[i]);

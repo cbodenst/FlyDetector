@@ -50,4 +50,7 @@ IF(SWIG_FOUND)
         
     SWIG_ADD_MODULE(FlyDetector python FlyDetector.i "cv_converter.h")
     SWIG_LINK_LIBRARIES(FlyDetector ${PYTHON_LIBRARIES} flyDetector ${OpenCV_LIBS})
+    execute_process(COMMAND python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())" OUTPUT_VARIABLE PYTHON_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
+    INSTALL(TARGETS _FlyDetector DESTINATION ${PYTHON_SITE_PACKAGES})
+    INSTALL(FILES ${CMAKE_BINARY_DIR}/python/FlyDetector.py DESTINATION ${PYTHON_SITE_PACKAGES})
 ENDIF(SWIG_FOUND)
