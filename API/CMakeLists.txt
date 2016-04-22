@@ -34,5 +34,6 @@ target_link_libraries(flyDetector ${OpenCV_LIBS})
 
 target_compile_features(flyDetector PRIVATE cxx_range_for)
 
+install(TARGETS flyDetector DESTINATION /usr/lib)
 
 ADD_SUBDIRECTORY(python)
