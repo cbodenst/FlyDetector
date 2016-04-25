@@ -211,6 +211,7 @@ void MainWindow::loadSettings(const QString& path)
     this->ui->threshold->setValue(settings.value(MainWindow::THRESHOLD).toInt());
     this->on_threshold_valueChanged(settings.value(MainWindow::THRESHOLD).toInt());
     this->ui->vialSize->setValue(settings.value(MainWindow::VIAL_SIZE).toInt());
+    this->on_vialSize_valueChanged(settings.value(MainWindow::VIAL_SIZE).toInt());
     this->ui->outputPath->setText(settings.value(MainWindow::OUTPUT_PATH).toString());
     this->on_outputPath_textChanged(settings.value(MainWindow::OUTPUT_PATH).toString());
     this->ui->saveImages->setChecked(settings.value(MainWindow::SAVE_IMAGES).toBool());
