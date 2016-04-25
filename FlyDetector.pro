@@ -57,8 +57,10 @@ FORMS    += mainwindow.ui
 LIBS += -lopencv_core
 LIBS += -lopencv_features2d
 LIBS += -lopencv_imgproc
+LIBS += -lopencv_imgcodecs
 LIBS += -lopencv_highgui
 LIBS += -lopencv_video
+LIBS += -lopencv_videoio
 LIBS += -lgphoto2
 LIBS += -lusb-1.0
 
