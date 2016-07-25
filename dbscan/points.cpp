@@ -2,6 +2,7 @@
 #include "rules.h"
 
 #include <algorithm>
+#include <numeric>
 #include <atomic>
 #include <iostream>
 #include <unordered_map>
